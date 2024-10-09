@@ -1,0 +1,30 @@
+{
+  "name": "medha_hike_estimator_backend",
+  "version": "1.0.0",
+  "description": "Backend for Medha Hike Estimator project",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "keywords": [
+    "express",
+    "knex",
+    "postgres",
+    "backend",
+    "jwt"
+  ],
+  "author": "Deepak Sharma",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
