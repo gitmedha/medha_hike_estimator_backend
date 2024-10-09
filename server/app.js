@@ -15,6 +15,7 @@ const corsOptions = {
     credentials: true,
   };
 
+
 // Middleware
 
 app.use(cors(corsOptions));
@@ -22,8 +23,10 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 
 const employeeRoutes = require('./routes/employeeRoutes');
+const historicalRoutes = require('./routes/historicalRoutes');
 
 // Routes
 app.use('/api/employees', employeeRoutes);
+app.use('/api/historical_data',historicalRoutes);
 
 module.exports = app;
