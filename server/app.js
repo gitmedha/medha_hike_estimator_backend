@@ -24,8 +24,10 @@ app.use(express.json());
 
 const employeeRoutes = require('./routes/employeeRoutes');
 const historicalRoutes = require('./routes/historicalRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Routes
+app.use('/api/users', userRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/historical_data',historicalRoutes);
 
