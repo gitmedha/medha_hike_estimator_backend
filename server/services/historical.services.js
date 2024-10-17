@@ -17,6 +17,14 @@ const getHistoricalDataService = async (offset, limit) => {
   };
 };
 
+const getHistoricDatabyID = async (id)=>{
+  const historicData = await historicalModel.getHistoricDatabyID(id);
+  return {
+    data: historicData
+  }
+}
+
 module.exports = {
     getHistoricalDataService,
+    getHistoricDatabyID
 };

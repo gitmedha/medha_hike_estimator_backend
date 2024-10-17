@@ -19,6 +19,17 @@ const getHistoricalData = async (req, res) => {
   }
 };
 
+const getHistoric = async (req,res)=>{
+  try {
+    const { id } = req.params;
+    const result = await HistoricalService.getHistoricDatabyID(id);
+    res.status(200).json(result);
+    
+  } catch (error) {
+    res.status(500).json({error: 'Error fetching historic data', details: error.message})
+  }
+}
 module.exports = {
     getHistoricalData,
+    getHistoric
 };

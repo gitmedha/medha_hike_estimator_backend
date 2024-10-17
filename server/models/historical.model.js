@@ -30,6 +30,12 @@ const getHistoricalQuery = async (limit, offset) => {
   };
 };
 
+const getHistoricDatabyID = async(id) => {
+  const historicData = await db('historical_data').select("*").where('id', id);
+  return historicData;
+}
+
 module.exports = {
     getHistoricalQuery,
+    getHistoricDatabyID
 };
