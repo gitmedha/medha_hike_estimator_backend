@@ -18,6 +18,14 @@ const getEmployeesService = async (offset, limit) => {
   };
 };
 
+const getEmployeeByID = async (id)=>{
+  console.log(employeeModel.getEmployeebyID);
+  const employee = await employeeModel.getEmployeebyID(id);
+  return {
+    data: employee
+  }
+}
 module.exports = {
   getEmployeesService,
+  getEmployeeByID
 };

@@ -31,6 +31,18 @@ const getEmployeesQuery = async (limit, offset) => {
   };
 };
 
+/**
+ * Fetch employee
+ * @param {number} id - the employee id
+ * @returns {object} - The employee data
+ */
+
+const getEmployeebyID = async(id) => {
+  const employee = await db('employee_details').select("*").where('id', id);
+  console.log(employee);
+  return employee;
+}
 module.exports = {
   getEmployeesQuery,
+  getEmployeebyID
 };
