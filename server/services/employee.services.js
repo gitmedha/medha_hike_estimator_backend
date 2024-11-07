@@ -47,9 +47,14 @@ const searchPickList = async (dropDownField) => {
     throw new Error(error.message);
   }
 }
+const getEmployeeHistoricDetails = async (firstName, lastName)=>{
+  const result = await employeeModel.getEmployeeHistoricDetails(firstName, lastName);
+  return result;
+}
 module.exports = {
   getEmployeesService,
   getEmployeeByID,
   searchEmployees,
-  searchPickList
+  searchPickList,
+  getEmployeeHistoricDetails
 };

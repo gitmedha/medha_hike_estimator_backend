@@ -42,7 +42,6 @@ const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
 
 const getEmployeebyID = async(id) => {
   const employee = await db('employee_details').select("*").where('id', id);
-  console.log(employee);
   return employee;
 }
 
@@ -79,7 +78,6 @@ try {
                             .orWhere('employee_status', 'like', `%${searchValue}%`)
                             .orWhere('employee_type', 'like', `%${searchValue}%`)
                             .first();
-                        console.log(totalCount);
                         
     return {
       data:employees,
@@ -108,9 +106,24 @@ const searchPickList = async (dropField)=>{
       throw new Error(error.message);
     }
 }
+
+const getEmployeeHistoricDetails = async (firstName,lastName) =>{
+  try {
+    const historicalDetails = await db('historical_data')
+                   .select('kra_vs_goals', 'employee', 'ending_month', 'final_score', 'competency', 'start_month', 'reviewer', 'id')
+                   .where('employee', `${firstName} ${lastName}`);    
+
+                   console.log(historicalDetails);
+                   
+    return historicalDetails;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
 module.exports = {
   getEmployeesQuery,
   getEmployeebyID,
   searchEmployees,
-  searchPickList
+  searchPickList,
+  getEmployeeHistoricDetails
 };
