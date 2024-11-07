@@ -34,12 +34,23 @@ const getEmployee = async (req,res)=>{
 
 const searchEmployees = async(req, res) => {
   try {
-   const {searchValue} = req.body;
-   const {from} = req.body.from || null;
-   const {to} = req.body.to || null;
-    const result = await employeeService.searchEmployees(searchValue,from,to);
+  let searchValue = from = to = null;
+  const { limit, size } = req.body;
+  if(req.body.searchValue){
+    searchValue = req.body.searchValue;
+  }
+  if(req.body.from){
+    from = req.body.from;
+  }
+  if(req.body.to){
+    to = req.body.to;
+  }
+
+    const result = await employeeService.searchEmployees(searchValue,from,to,limit,size);
     res.status(200).json(result);
   } catch (error) {
+    console.log(error);
+    
     res.status(500).json({ error: 'Error searching employees', details: error.message });
   }
 }

@@ -26,8 +26,8 @@ const getEmployeeByID = async (id)=>{
   }
 }
 
-const searchEmployees = async (searchValue,from,to)=>{
-  const result = await employeeModel.searchEmployees(searchValue,from,to);
+const searchEmployees = async (searchValue,from,to,limit,size)=>{
+  const result = await employeeModel.searchEmployees(searchValue,from,to,limit,size);
   return {
     data: result.data,
     total: result.totalCount
@@ -35,8 +35,17 @@ const searchEmployees = async (searchValue,from,to)=>{
 }
 
 const searchPickList = async (dropDownField) => {
+  try {
+    
   const result = await employeeModel.searchPickList(dropDownField);
-  return result.data.map(employee => ({ label: employee.dropDownField, value: employee.dropDownField }));
+  return result.map(employee => ({
+    label: employee[dropDownField],
+    value: employee[dropDownField]
+  }));    
+  } catch (error) {
+    console.log(error);
+    throw new Error(error.message);
+  }
 }
 module.exports = {
   getEmployeesService,

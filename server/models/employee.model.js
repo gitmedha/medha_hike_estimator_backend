@@ -46,8 +46,12 @@ const getEmployeebyID = async(id) => {
   return employee;
 }
 
-const searchEmployees = async(searchValue,from,to)=>{
+const searchEmployees = async(searchValue,from,to,limit,size)=>{
 try {
+  const sortColumn = ['first_name', 'last_name', 'email_id', 'department', 'title', 'employee_status', 'employee_type'].includes(searchValue)
+  ? searchValue
+  : 'first_name';
+
   if( from & to){
 
   }
@@ -61,10 +65,25 @@ try {
                             .orWhere('title', 'like', `%${searchValue}%`)
                             .orWhere('employee_status', 'like', `%${searchValue}%`)
                             .orWhere('employee_type', 'like', `%${searchValue}%`)
-                            .orderBy(searchValue,'asc');
+                            .orderBy(sortColumn,'asc')
+                            .limit(limit)
+                            .offset(size*limit);
+
+    const totalCount = await db('employee_details')
+                            .count('* as count')
+                            .where('first_name', 'like', `%${searchValue}%`)
+                            .orWhere('last_name', 'like', `%${searchValue}%`)
+                            .orWhere('email_id', 'like', `%${searchValue}%`)
+                            .orWhere('department', 'like', `%${searchValue}%`)
+                            .orWhere('title', 'like', `%${searchValue}%`)
+                            .orWhere('employee_status', 'like', `%${searchValue}%`)
+                            .orWhere('employee_type', 'like', `%${searchValue}%`)
+                            .first();
+                        console.log(totalCount);
+                        
     return {
       data:employees,
-      totalCount: employees.length
+      totalCount: totalCount.count
     };
   }
 
@@ -74,6 +93,7 @@ try {
 }
 
 const searchPickList = async (dropField)=>{
+
     try {
         const dropDown = await db('employee_details')
         .select(dropField)
@@ -83,6 +103,7 @@ const searchPickList = async (dropField)=>{
         .limit(100);
         return dropDown;
     }
+   
     catch(error) {
       throw new Error(error.message);
     }

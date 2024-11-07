@@ -22,6 +22,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 
+
 const employeeRoutes = require('./routes/employeeRoutes');
 const historicalRoutes = require('./routes/historicalRoutes');
 const userRoutes = require('./routes/userRoutes');
