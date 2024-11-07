@@ -6,9 +6,9 @@ const historicalModel = require('../models/historical.model');
  * @param {number} limit - The number of historical data to fetch per page
  * @returns {object} - historical  data and total count
  */
-const getHistoricalDataService = async (offset, limit) => {
+const getHistoricalDataService = async (offset, limit,sortBy,sortOrder) => {
 
-  const result = await historicalModel.getHistoricalQuery(limit, offset);
+  const result = await historicalModel.getHistoricalQuery(limit, offset,sortBy,sortOrder);
 
   return {
     total: result.totalCount,

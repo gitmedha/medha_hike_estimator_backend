@@ -9,8 +9,11 @@ const getHistoricalData = async (req, res) => {
 
     const offset = parseInt(req.query.offset) || 0;
     const limit = parseInt(req.query.limit) || 10;
+    
+    const sortBy = req.query.sortBy || 'employee';
+    const sortOrder = req.query.sortOrder || 'asc';
 
-    const result = await HistoricalService.getHistoricalDataService(offset,limit);
+    const result = await HistoricalService.getHistoricalDataService(offset,limit,sortBy,sortOrder);
 
     res.status(200).json(result);
   } catch (error) {

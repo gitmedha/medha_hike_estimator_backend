@@ -9,8 +9,10 @@ const getEmployees = async (req, res) => {
 
     const offset = parseInt(req.query.offset) || 0;
     const limit = parseInt(req.query.limit) || 10;
+    const sortBy = req.query.sortBy || 'employee_id';
+    const sortOrder = req.query.sortOrder || 'asc';
 
-    const result = await employeeService.getEmployeesService(offset,limit);
+    const result = await employeeService.getEmployeesService(offset,limit,sortBy,sortOrder);
 
     res.status(200).json(result);
   } catch (error) {
@@ -30,7 +32,30 @@ const getEmployee = async (req,res)=>{
   }
 }
 
+const searchEmployees = async(req, res) => {
+  try {
+   const {searchValue} = req.body;
+   const {from} = req.body.from || null;
+   const {to} = req.body.to || null;
+    const result = await employeeService.searchEmployees(searchValue,from,to);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Error searching employees', details: error.message });
+  }
+}
+const searchPickList = async(req,res) =>{
+  try {
+    const {dropDownField} = req.params;
+    const result = await employeeService.searchPickList(dropDownField);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Error searching pick list', details: error.message });
+  }
+}
+
 module.exports = {
   getEmployees,
-  getEmployee
+  getEmployee,
+  searchEmployees,
+  searchPickList
 };
