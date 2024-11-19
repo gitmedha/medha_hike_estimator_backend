@@ -24,7 +24,48 @@ const getHistoricDatabyID = async (id)=>{
   }
 }
 
+
+const searchHistoric = async (searchValue,from,to,limit,size)=>{
+  const result = await historicalModel.searchHistoric(searchValue,from,to,limit,size);
+  return {
+    data: result.data,
+    total: result.totalCount
+  }
+}
+
+const searchPickList = async (dropDownField) => {
+  try {
+    
+  const result = await historicalModel.searchPickList(dropDownField);
+  return result.map(historic => ({
+    label: historic[dropDownField],
+    value: historic[dropDownField]
+  }));    
+  } catch (error) {
+    console.log(error);
+    throw new Error(error.message);
+  }
+}
+
+const getHistoricsDropDowns = async ()=>{
+  const result = await employeeModel.getDropDownValues();
+  try {
+    
+  const modifiedDoc = {};
+  modifiedDoc.titles = result.title.map(title=>({label:title.title, value: title.title}));
+  modifiedDoc.departments = result.department.map(department=> ({label:department.department, value:department.department}))
+  modifiedDoc.employeeTypes = result.employeeType.map(employeeType=> ({label:employeeType.employee_type, value:employeeType.employee_type}))
+  modifiedDoc.currentBands = result.currentBand.map(currentBand=> ({label:currentBand.current_band, value:currentBand.current_band}))
+  return modifiedDoc;
+    
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while processing values"+ error.message);
+  }
+}
 module.exports = {
     getHistoricalDataService,
-    getHistoricDatabyID
+    getHistoricDatabyID,
+    searchHistoric,
+    searchPickList
 };

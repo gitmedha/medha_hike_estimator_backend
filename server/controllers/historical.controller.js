@@ -32,7 +32,42 @@ const getHistoric = async (req,res)=>{
     res.status(500).json({error: 'Error fetching historic data', details: error.message})
   }
 }
+
+const searchHistorics = async(req, res) => {
+  try {
+  let searchValue = from = to = null;
+  const { limit, page } = req.body;
+  if(req.body.searchValue){
+    searchValue = req.body.searchValue;
+  }
+  if(req.body.from){
+    from = req.body.from;
+  }
+  if(req.body.to){
+    to = req.body.to;
+  }
+
+    const result = await HistoricalService.searchHistoric(searchValue,from,to,limit,page);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    
+    res.status(500).json({ error: 'Error searching historics', details: error.message });
+  }
+}
+const searchPickList = async(req,res) =>{
+  try {
+    const {dropDownField} = req.params;
+    const result = await HistoricalService.searchPickList(dropDownField);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Error searching pick list', details: error.message });
+  }
+}
+
 module.exports = {
     getHistoricalData,
-    getHistoric
+    getHistoric,
+    searchHistorics,
+    searchPickList
 };

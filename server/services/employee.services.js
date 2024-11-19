@@ -51,10 +51,43 @@ const getEmployeeHistoricDetails = async (firstName, lastName)=>{
   const result = await employeeModel.getEmployeeHistoricDetails(firstName, lastName);
   return result;
 }
+
+const getEmployeeDropDowns = async ()=>{
+  const result = await employeeModel.getDropDownValues();
+  try {
+    
+  const modifiedDoc = {};
+  modifiedDoc.titles = result.title.map(title=>({label:title.title, value: title.title}));
+  modifiedDoc.departments = result.department.map(department=> ({label:department.department, value:department.department}))
+  modifiedDoc.employeeTypes = result.employeeType.map(employeeType=> ({label:employeeType.employee_type, value:employeeType.employee_type}))
+  modifiedDoc.currentBands = result.currentBand.map(currentBand=> ({label:currentBand.current_band, value:currentBand.current_band}))
+  return modifiedDoc;
+    
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while processing values"+ error.message);
+  }
+}
+
+const createEmployee = async(employeeData)=>{
+  try {
+    const result = await employeeModel.createEmployee(employeeData);
+    return {
+      data: result
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while creating employee"+ error.message);
+  }
+
+}
+
 module.exports = {
   getEmployeesService,
   getEmployeeByID,
   searchEmployees,
   searchPickList,
-  getEmployeeHistoricDetails
+  getEmployeeHistoricDetails,
+  getEmployeeDropDowns,
+  createEmployee
 };

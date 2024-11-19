@@ -73,10 +73,20 @@ const getEmployeeHistoricDetails = async (req, res) => {
     res.status(500).json({ error: 'Error fetching employee historical details', details: error.message });
   }
 }
+
+const getEmployeeDropDowns = async(req,res)=>{
+try {
+  const result = await employeeService.getEmployeeDropDowns();
+  res.status(200).json(result);
+} catch (error) {
+  res.status(500).json({error: 'Error fetching employee drop downs', details: error.message})
+}
+}
 module.exports = {
   getEmployees,
   getEmployee,
   searchEmployees,
   searchPickList,
-  getEmployeeHistoricDetails
+  getEmployeeHistoricDetails,
+  getEmployeeDropDowns
 };

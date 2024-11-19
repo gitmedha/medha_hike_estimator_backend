@@ -120,10 +120,52 @@ const getEmployeeHistoricDetails = async (firstName,lastName) =>{
     throw new Error(error.message);
   }
 }
+
+const getDropDownValues = async ()=>{
+  try {
+    const department = await db('employee_details').select('department').distinct().offset(0).limit(100);
+    const title = await db('employee_details').select('title').distinct().offset(0).limit(100);
+    const employeeStatus = await db('employee_details').select('employee_status').distinct().offset(0).limit(100);
+    const employeeType = await db('employee_details').select('employee_type').distinct().offset(0).limit(100);
+    const currentBand = await db('employee_details').select('current_band').distinct().offset(0).limit(100);
+    return {
+      department,
+      title,
+      employeeStatus,
+      employeeType,
+      currentBand
+    }
+  }catch(e){
+    throw new Error(e.message);
+  }
+}
+
+const createEmployee = async (employeeData)=>{
+  try {
+    const newEmployee = await db('employee_details').insert({
+      first_name: employeeData.first_name,
+      last_name:employeeData.last_name,
+      email_id: employeeData.email_id,
+      department: employeeData.department,
+      title:employeeData.title,
+      date_of_joining:employeeData.date_of_joining,
+      employee_status: employeeData.employee_status,
+      employee_type: employeeData.employee_type,
+      current_band: employeeData.current_band
+    });
+    return newEmployee;
+  
+  }
+    catch(e){
+      throw new Error(e.message);
+    }
+}
 module.exports = {
   getEmployeesQuery,
   getEmployeebyID,
   searchEmployees,
   searchPickList,
-  getEmployeeHistoricDetails
+  getEmployeeHistoricDetails,
+  getDropDownValues,
+  createEmployee
 };
