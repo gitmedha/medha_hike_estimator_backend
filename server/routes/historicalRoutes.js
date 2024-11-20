@@ -6,7 +6,7 @@ router.get('/get_historical_data', historicalController.getHistoricalData);
 router.get('/get_historic/:id', historicalController.getHistoric);
 router.post('/search_historics', historicalController.searchHistorics);
 router.get('/search_picklist/:dropDownField', historicalController.searchPickList);
-router.get('/get_historic_picklist', historicalController.getHistoricDropDowns)
-router.get('/get_reportee_details', historicalController.getReporteeDetails);
+router.get('/get_historic_picklist', historicalController.getHistoricDropDowns);
+router.get('/get_reportee_details/:name', historicalController.getReporteeDetails);
 
 module.exports = router;

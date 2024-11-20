@@ -62,10 +62,23 @@ const getHistoricsDropDowns = async ()=>{
   }
 }
 
+const getReporteeDetails = async (name) =>{
+  try {
+
+    const reporteeDetails = await historicalModel.getReporteeDetails(name);
+    return reporteeDetails;
+    
+  } catch (error) {
+    console.log(error);
+    throw new Error('Error while getting reportee details'+ error.message);
+  }
+}
+
 module.exports = {
     getHistoricalDataService,
     getHistoricDatabyID,
     searchHistoric,
     searchPickList,
-    getHistoricsDropDowns
+    getHistoricsDropDowns,
+    getReporteeDetails
 };

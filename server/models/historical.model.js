@@ -113,10 +113,38 @@ const getHistoricalPickList = async()=>{
   }
 }
 
+const getReporteeDetails = async (name)=>{
+  try {
+    const manager = await db('historical_data').select('*').distinct().where('reviewer', name);
+    const uniqueEmployees = manager.reduce((acc, item) => {
+      if (!acc.some(existingItem => existingItem.employee === item.employee)) {
+        acc.push(item);
+      }
+      return acc;
+    }, []);
+    
+    const reporteeData = [];
+    for(let i=0; i<uniqueEmployees.length; i++){
+      const reportee = await db('employee_details').select('first_name', 'last_name', 'employee_id', 'email_id')
+      .whereRaw("CONCAT(first_name, ' ', last_name) = ?", [uniqueEmployees[i].employee]);
+
+      reporteeData.push(...reportee);
+    }
+
+    return reporteeData;
+    
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while fetching reportee details", error.message);
+  }
+
+}
+
 module.exports = {
     getHistoricalQuery,
     getHistoricDatabyID,
     searchHistoric,
     searchPickList,
-    getHistoricalPickList
+    getHistoricalPickList,
+    getReporteeDetails
 };

@@ -77,9 +77,12 @@ const getHistoricDropDowns = async(req,res)=>{
 
 const getReporteeDetails = async (req, res) => {
   try {
-    
+    const { name } = req.params;
+    const result = await HistoricalService.getReporteeDetails(name);
+    res.status(200).json(result);
   } catch (error) {
-    
+    console.log(error);
+    res.status(500).json({message: "Error getting reportee details", error: error.message})
   }
 }
 module.exports = {
