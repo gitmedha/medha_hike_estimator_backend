@@ -48,14 +48,12 @@ const searchPickList = async (dropDownField) => {
 }
 
 const getHistoricsDropDowns = async ()=>{
-  const result = await employeeModel.getDropDownValues();
+  const result = await historicalModel.getHistoricalPickList();
   try {
     
   const modifiedDoc = {};
-  modifiedDoc.titles = result.title.map(title=>({label:title.title, value: title.title}));
-  modifiedDoc.departments = result.department.map(department=> ({label:department.department, value:department.department}))
-  modifiedDoc.employeeTypes = result.employeeType.map(employeeType=> ({label:employeeType.employee_type, value:employeeType.employee_type}))
-  modifiedDoc.currentBands = result.currentBand.map(currentBand=> ({label:currentBand.current_band, value:currentBand.current_band}))
+  modifiedDoc.employees = result.employee.map(employee=>({label:employee.employee, value: employee.employee}));
+  modifiedDoc.reviewers = result.reviewer.map(reviewer=> ({label:reviewer.reviewer, value:reviewer.reviewer}));
   return modifiedDoc;
     
   } catch (error) {
@@ -63,9 +61,11 @@ const getHistoricsDropDowns = async ()=>{
     throw new Error("Error while processing values"+ error.message);
   }
 }
+
 module.exports = {
     getHistoricalDataService,
     getHistoricDatabyID,
     searchHistoric,
-    searchPickList
+    searchPickList,
+    getHistoricsDropDowns
 };

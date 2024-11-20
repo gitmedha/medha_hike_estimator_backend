@@ -99,10 +99,24 @@ const searchHistoric = async(searchValue,from,to,limit,size)=>{
       }
   }
 
+const getHistoricalPickList = async()=>{
+  try {
+    const employee = await db('historical_data').select('employee').distinct().offset(0).limit(100);
+    const reviewer = await db('historical_data').select('reviewer').distinct().offset(0).limit(100);
+    return {
+      employee,
+      reviewer,
+    }
+    
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
 
 module.exports = {
     getHistoricalQuery,
     getHistoricDatabyID,
     searchHistoric,
-    searchPickList
+    searchPickList,
+    getHistoricalPickList
 };

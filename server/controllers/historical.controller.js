@@ -65,9 +65,28 @@ const searchPickList = async(req,res) =>{
   }
 }
 
+const getHistoricDropDowns = async(req,res)=>{
+  try {
+    const result = await HistoricalService.getHistoricsDropDowns();
+    return res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({error: "Error while fetching values", details: error.message})
+  }
+}
+
+
+const getReporteeDetails = async (req, res) => {
+  try {
+    
+  } catch (error) {
+    
+  }
+}
 module.exports = {
     getHistoricalData,
     getHistoric,
     searchHistorics,
-    searchPickList
+    searchPickList,
+    getHistoricDropDowns,
+    getReporteeDetails
 };
