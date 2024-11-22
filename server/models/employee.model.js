@@ -140,26 +140,53 @@ const getDropDownValues = async ()=>{
   }
 }
 
-const createEmployee = async (employeeData)=>{
+const createEmployee = async (employeeData) => {
   try {
-    const newEmployee = await db('employee_details').insert({
-      first_name: employeeData.first_name,
-      last_name:employeeData.last_name,
-      email_id: employeeData.email_id,
-      department: employeeData.department,
-      title:employeeData.title,
-      date_of_joining:employeeData.date_of_joining,
-      employee_status: employeeData.employee_status,
-      employee_type: employeeData.employee_type,
-      current_band: employeeData.current_band
-    });
+    const [newEmployee] = await db('employee_details')
+      .insert({
+        first_name: employeeData.first_name,
+        last_name: employeeData.last_name,
+        email_id: employeeData.email_id,
+        department: employeeData.department,
+        title: employeeData.title,
+        date_of_joining: employeeData.date_of_joining,
+        employee_status: employeeData.employee_status,
+        employee_type: employeeData.employee_type,
+        current_band: employeeData.current_band,
+      })
+      .returning('*');  
+
+    console.log(newEmployee);
     return newEmployee;
-  
+  } catch (e) {
+    throw new Error(e.message);
   }
-    catch(e){
-      throw new Error(e.message);
-    }
-}
+};
+
+const updateEmployeeQuery = async (id, employeeData) => {
+  try {
+      const [updatedEmployee] = await db('employee_details')
+          .where({ id })
+          .update(employeeData, ['*']);
+
+      return updatedEmployee || null;
+  } catch (error) {
+      throw new Error(`Model Error: ${error.message}`);
+  }
+};
+
+const deleteEmployeeQuery = async (id) => {
+  try {
+      const [deletedEmployee] = await db('employee_details')
+          .where({ id })
+          .del(['*']);
+
+      return deletedEmployee || null;
+  } catch (error) {
+      throw new Error(`Model Error: ${error.message}`);
+  }
+};
+
 module.exports = {
   getEmployeesQuery,
   getEmployeebyID,
@@ -167,5 +194,7 @@ module.exports = {
   searchPickList,
   getEmployeeHistoricDetails,
   getDropDownValues,
-  createEmployee
+  createEmployee,
+  updateEmployeeQuery,
+  deleteEmployeeQuery
 };

@@ -94,6 +94,24 @@ const createEmployee = async(employeeData)=>{
 
 }
 
+const updateEmployeeService = async (id, employeeData) => {
+  try {
+      const updatedEmployee = await employeeModel.updateEmployeeQuery(id, employeeData);
+      return updatedEmployee;
+  } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+  }
+};
+
+const deleteEmployeeService = async (id) => {
+  try {
+      const deletedEmployee = await employeeModel.deleteEmployeeQuery(id);
+      return deletedEmployee;
+  } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+  }
+};
+
 module.exports = {
   getEmployeesService,
   getEmployeeByID,
@@ -101,5 +119,7 @@ module.exports = {
   searchPickList,
   getEmployeeHistoricDetails,
   getEmployeeDropDowns,
-  createEmployee
+  createEmployee,
+  updateEmployeeService,
+  deleteEmployeeService
 };

@@ -4,6 +4,21 @@ const employeeService = require('../services/employee.services');
  * @param {object} req
  * @param {object} res
  */
+const createEmployee = async(req, res) => {
+  try {
+    const employeeData = req.body;
+    const result = await employeeService.createEmployee(employeeData);
+    res.status(201).json(result);
+    
+  } catch (error) {
+    return res.status(400).json({error: "Error creating employee", message: error.message});
+  }
+}
+
+/**
+ * @param {object} req
+ * @param {object} res
+ */
 const getEmployees = async (req, res) => {
   try {
 
@@ -82,11 +97,65 @@ try {
   res.status(500).json({error: 'Error fetching employee drop downs', details: error.message})
 }
 }
+
+const updateEmployee = async (req, res) => {
+  try {
+      const { id } = req.params;
+      const employeeData = req.body;
+
+      if (!id) {
+          return res.status(400).json({ message: "Employee ID is required." });
+      }
+
+      const updatedEmployee = await employeeService.updateEmployeeService(id, employeeData);
+
+      if (!updatedEmployee) {
+          return res.status(404).json({ message: "Employee not found." });
+      }
+
+      return res.status(200).json({
+          message: "Employee updated successfully.",
+          data: updatedEmployee,
+      });
+  } catch (error) {
+      console.error("Error updating employee:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+const deleteEmployee = async (req, res) => {
+  try {
+      const { id } = req.params;
+
+      if (!id) {
+          return res.status(400).json({ message: "Employee ID is required." });
+      }
+
+      const deletedEmployee = await employeeService.deleteEmployeeService(id);
+
+      if (!deletedEmployee) {
+          return res.status(404).json({ message: "Employee not found." });
+      }
+
+      return res.status(200).json({
+          message: "Employee deleted successfully.",
+          data: deletedEmployee,
+      });
+  } catch (error) {
+      console.error("Error deleting employee:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
+  createEmployee,
   getEmployees,
   getEmployee,
   searchEmployees,
   searchPickList,
   getEmployeeHistoricDetails,
-  getEmployeeDropDowns
+  getEmployeeDropDowns,
+  updateEmployee,
+  deleteEmployee
 };
