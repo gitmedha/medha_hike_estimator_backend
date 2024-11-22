@@ -8,5 +8,8 @@ router.post('/search_historics', historicalController.searchHistorics);
 router.get('/search_picklist/:dropDownField', historicalController.searchPickList);
 router.get('/get_historic_picklist', historicalController.getHistoricDropDowns);
 router.get('/get_reportee_details/:name', historicalController.getReporteeDetails);
+router.post('/create_historical_data', historicalController.createHistoric);
+router.put('/edit_historical_data/:id', historicalController.updateHistoric);
+router.delete('/delete_historical_data/:id', historicalController.deleteHistoric);
 
 module.exports = router;

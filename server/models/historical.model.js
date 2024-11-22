@@ -140,11 +140,58 @@ const getReporteeDetails = async (name)=>{
 
 }
 
+const createHistoric = async (historicData) => {
+  try {
+    const [newHistoric] = await db('historical_data')
+      .insert({
+        employee: historicData.employee,
+        reviewer: historicData.reviewer,
+        kra_vs_goals: historicData.kra_vs_goals,
+        competency: historicData.competency,
+        final_score: historicData.final_score,
+        start_month: historicData.start_month,
+        ending_month: historicData.ending_month
+      })
+      .returning('*');  
+
+    return newHistoric;
+  } catch (e) {
+    throw new Error(e.message);
+  }
+};
+
+const updateHistoricQuery = async (id, historicData) => {
+  try {
+      const [updatedHistoricalData] = await db('historical_data')
+          .where({ id })
+          .update(historicData, ['*']);
+
+      return updatedHistoricalData || null;
+  } catch (error) {
+      throw new Error(`Model Error: ${error.message}`);
+  }
+};
+
+const deleteHistoricQuery = async (id) => {
+  try {
+      const [deletedHistoric] = await db('historical_data')
+          .where({ id })
+          .del(['*']);
+
+      return deletedHistoric || null;
+  } catch (error) {
+      throw new Error(`Model Error: ${error.message}`);
+  }
+};
+
 module.exports = {
     getHistoricalQuery,
     getHistoricDatabyID,
     searchHistoric,
     searchPickList,
     getHistoricalPickList,
-    getReporteeDetails
+    getReporteeDetails,
+    createHistoric,
+    updateHistoricQuery,
+    deleteHistoricQuery
 };

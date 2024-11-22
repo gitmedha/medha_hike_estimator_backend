@@ -85,11 +85,76 @@ const getReporteeDetails = async (req, res) => {
     res.status(500).json({message: "Error getting reportee details", error: error.message})
   }
 }
+
+const createHistoric = async(req, res) => {
+  try {
+    const historicData = req.body;
+    const result = await HistoricalService.createHistoric(historicData);
+    res.status(201).json(result);
+    
+  } catch (error) {
+    return res.status(400).json({error: "Error creating employee", message: error.message});
+  }
+}
+
+const updateHistoric = async (req, res) => {
+  try {
+      const { id } = req.params;
+      const historicData = req.body;
+
+      if (!id) {
+          return res.status(400).json({ message: "Historic ID is required." });
+      }
+
+      const updatedHistoric = await HistoricalService.updateHistoricService(id, historicData);
+
+      if (!updatedHistoric) {
+          return res.status(404).json({ message: "Historic data not found." });
+      }
+
+      return res.status(200).json({
+          message: "Historic data updated successfully.",
+          data: updatedHistoric,
+      });
+  } catch (error) {
+      console.error("Error updating historic data:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+const deleteHistoric = async (req, res) => {
+  try {
+      const { id } = req.params;
+
+      if (!id) {
+          return res.status(400).json({ message: "Historic ID is required." });
+      }
+
+      const deletedEmployee = await HistoricalService.deleteHistoricService(id);
+
+      if (!deletedEmployee) {
+          return res.status(404).json({ message: "Historic not found." });
+      }
+
+      return res.status(200).json({
+          message: "Historic deleted successfully.",
+          data: deletedEmployee,
+      });
+  } catch (error) {
+      console.error("Error deleting historic:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
     getHistoricalData,
     getHistoric,
     searchHistorics,
     searchPickList,
     getHistoricDropDowns,
-    getReporteeDetails
+    getReporteeDetails,
+    deleteHistoric,
+    updateHistoric,
+    createHistoric
 };

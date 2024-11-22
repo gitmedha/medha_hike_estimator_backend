@@ -153,7 +153,8 @@ const createEmployee = async (employeeData) => {
         employee_status: employeeData.employee_status,
         employee_type: employeeData.employee_type,
         current_band: employeeData.current_band,
-        employed_id: employeeData.employed_id,
+        employee_id: employeeData.employee_id,
+        experience: employeeData.experience
       })
       .returning('*');  
 

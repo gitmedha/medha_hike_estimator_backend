@@ -74,11 +74,45 @@ const getReporteeDetails = async (name) =>{
   }
 }
 
+const createHistoric = async(historicData)=>{
+  try {
+    const result = await historicalModel.createHistoric(historicData);
+    return {
+      data: result
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while creating historic data"+ error.message);
+  }
+
+}
+
+const updateHistoricService = async (id, historicData) => {
+  try {
+      const updatedHistoric = await historicalModel.updateHistoricQuery(id, historicData);
+      return updatedHistoric;
+  } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+  }
+};
+
+const deleteHistoricService = async (id) => {
+  try {
+      const deletedHistoric = await historicalModel.deleteHistoricQuery(id);
+      return deletedHistoric;
+  } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+  }
+};
+
 module.exports = {
     getHistoricalDataService,
     getHistoricDatabyID,
     searchHistoric,
     searchPickList,
     getHistoricsDropDowns,
-    getReporteeDetails
+    getReporteeDetails,
+    createHistoric,
+    updateHistoricService,
+    deleteHistoricService
 };
