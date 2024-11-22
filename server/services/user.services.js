@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
  */
 const LoginUser = async (username) => {
   const result = await userModel.LoginUser(username);
+
   return {
     data: result.data
   };
@@ -22,7 +23,6 @@ const LoginUser = async (username) => {
 
 const HashPassword = async (password) => {
   const hashedPassword = await bcrypt.hash(password, 10);
-  console.log(hashedPassword);
   return hashedPassword;
 };
 
@@ -33,7 +33,7 @@ const HashPassword = async (password) => {
  * @returns {Boolean} true if password matches, false otherwise 
  */
 
-const comparePassword = async (user,password) => {    
+const comparePassword = async (user,password) => {   
     return await bcrypt.compare(password, user);
   };
 
@@ -45,7 +45,7 @@ const comparePassword = async (user,password) => {
  * */
 
 const RegisterUser = async (username, password) => {
-  const hashedPassword = await HashPassword(username, password);
+  const hashedPassword = await HashPassword(password);
   const result = await userModel.RegisterUser(username, hashedPassword);
   return {
     data: result.data

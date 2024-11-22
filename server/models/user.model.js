@@ -4,7 +4,7 @@ const db = require('../config/db');
  * verify user details
  * @returns {object} - The user data
  */
-const LoginUser = async (username,password) => {
+const LoginUser = async (username) => {
   const user = await db('user_table')
     .select(
       'username',

@@ -11,13 +11,14 @@ const LoginUser = async (req, res) => {
     const password = (req.body.password) || 0;
 
     const result = await userServices.LoginUser(username);
-    if (!result) {
-      return res.status(401).json({ error: 'Invalid username or password' });
+
+    if (!result.data.length) {
+      return res.status(401).json({ error: 'Invalid username' });
     }
-    
+
     const isPasswordValid = await userServices.comparePassword(result.data[0].password,password);
 
-    // if (!isPasswordValid) return res.status(401).json({ error: 'Invalid password' });
+    if (!isPasswordValid) return res.status(401).json({ error: 'Invalid password' });
 
     // Generate JWT token for authenticated user
     const token = await userServices.generateToken(result.data[0]);

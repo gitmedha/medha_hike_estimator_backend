@@ -1,4 +1,5 @@
 const employeeModel = require('../models/employee.model');
+const moment = require('moment');
 
 /**
  * Get paginated employee details
@@ -11,6 +12,17 @@ const employeeModel = require('../models/employee.model');
 const getEmployeesService = async (offset, limit,sortBy,sortOrder) => {
 
   const result = await employeeModel.getEmployeesQuery(limit, offset,sortBy,sortOrder);
+
+  if (result.data && Array.isArray(result.data)) {
+    for (let i = 0; i < result.data.length; i++) {
+      const isoDate = result.data[i].date_of_joining;
+      if (isoDate) {
+        const formattedDate = moment(isoDate).format('YYYY-MM-DD');
+        result.data[i].date_of_joining = formattedDate;
+      }
+    }
+  }
+
 
   return {
     total: result.totalCount,
