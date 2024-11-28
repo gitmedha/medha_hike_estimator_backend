@@ -29,17 +29,19 @@ const getIncrementDataById = async(id)=>{
 
 const createIncrementData = async(incrementData)=>{
     try{
-        const [newIncrement] = await db('increment_details').insert(incrementData);
+        const newIncrement = await db('increment_details').insert(incrementData).returning('id');
         return newIncrement;
     }catch(err){
+        console.log(err);
         throw new Error('Error creating increment data');
     }
 }
 const updateIncrementData = async(updatedData,id)=>{
     try{
-        const [updatedIncrement] = await db('increment_details').where('id', id).update(updatedData);
+        const updatedIncrement= await db('increment_details').where('id', id).update(updatedData);
         return updatedIncrement;
     }catch(err){
+        console.log(err);
         throw new Error('Error updating increment data');
     }
 }
@@ -117,6 +119,20 @@ const getSearchDropdowns = async(Field) => {
     }
 }
 
+
+const getPickList = async()=>{
+    try{
+        // const pickList = await db('increment_details').select("manager","employee_id", "full_name").distinct().offset(0).limit(100);
+        const employees = await db('employee_details').select("employee_id", "first_name", "last_name").distinct();
+        const managers = await db('historical_data').select('reviewer').distinct();
+        return {
+            employees:employees,
+            managers:managers
+        };
+    }catch(err){
+        throw new Error('Error fetching picklist values');
+    }
+}
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -126,4 +142,5 @@ module.exports = {
     filterIncrementData,
     searchIncrementData,
     getSearchDropdowns,
+    getPickList
 }

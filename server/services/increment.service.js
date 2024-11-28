@@ -39,6 +39,7 @@ const fetchIncrementDataById = async (id) => {
       }
       return { id, message: 'Increment data updated successfully' };
     } catch (err) {
+      console.log(err)
       throw new Error(`Service Error: Unable to update increment data. ${err.message}`);
     }
   };
@@ -86,6 +87,37 @@ const fetchIncrementDataById = async (id) => {
     }
   };
 
+  const getPickList = async ()=>{
+    try {
+      const result = await incrementModel.getPickList();
+      const pickList = {
+        managers: [],
+        IDs: [],
+        names: [],
+      };
+      
+      pickList.managers = result.managers.map((item) => ({
+        label: item.reviewer,
+        value: item.reviewer,
+      }));
+      
+      pickList.IDs = result.employees.map((item) => ({
+        label: item.employee_id,
+        value: item.employee_id,
+      }));
+      
+      pickList.names = result.employees.map((item) => ({
+        label: item.first_name+ " "+ item.last_name,
+        value: item.first_name+ " "+ item.last_name,
+      }));
+      
+      return pickList;
+      
+    } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+    }
+  }
+
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -95,4 +127,5 @@ const fetchIncrementDataById = async (id) => {
     filterIncrementData,
     searchIncrementData,
     getDropdownOptions,
+    getPickList
   };

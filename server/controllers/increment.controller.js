@@ -2,7 +2,7 @@ const incrementService = require('../services/increment.service');
 
 
 const getIncrementData = async (req, res) => {
-    const { offset, limit, sortBy, sortOrder } = req.query;
+    const { offset, limit, sortBy, sortOrder } = req.params;
     try {
       const result = await incrementService.fetchIncrementData(Number(offset), Number(limit), sortBy, sortOrder);
       return res.status(200).json(result);
@@ -92,6 +92,16 @@ const getIncrementData = async (req, res) => {
     }
   };
 
+  const getPickList = async(req, res)=>{
+    try {
+      const result = await incrementService.getPickList();
+      return res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching pick list', details: error.message });
+    }
+
+  }
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -100,5 +110,6 @@ module.exports = {
     deleteIncrementData,
     filterIncrementData,
     searchIncrementData,
-    getSearchDropdowns
+    getSearchDropdowns,
+    getPickList
 }

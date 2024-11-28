@@ -3,7 +3,7 @@ const router = express.Router();
 const incrementController = require('../controllers/increment.controller');
 
 // Route to fetch paginated and sorted increment data
-router.get('/get-increment-data', incrementController.getIncrementData);
+router.get('/get-increment-data/:limit/:offset/:sortBy/:sortOrder', incrementController.getIncrementData);
 
 // Route to fetch increment data by ID
 router.get('/get-increment-data/:id', incrementController.getIncrementDataById);
@@ -25,5 +25,7 @@ router.get('/search-increment-data', incrementController.searchIncrementData);
 
 // Route to get dropdown options for a specific field
 router.get('/search-dropdowns/:field', incrementController.getSearchDropdowns);
+
+router.get('/get_increments_picklist', incrementController.getPickList);
 
 module.exports = router;
