@@ -18,7 +18,7 @@ router.put('/edit-increment-data/:id', incrementController.updateIncrementData);
 router.delete('/delete-increment-data/:id', incrementController.deleteIncrementData);
 
 // Route to filter increment data dynamically
-router.post('/add-filter-increment-data', incrementController.filterIncrementData);
+router.post('/add-filter-increment-data/:offset/:limit', incrementController.filterIncrementData);
 
 // Route to search increment data by field and value
 router.get('/search-increment-data', incrementController.searchIncrementData);
@@ -27,5 +27,7 @@ router.get('/search-increment-data', incrementController.searchIncrementData);
 router.get('/search-dropdowns/:field', incrementController.getSearchDropdowns);
 
 router.get('/get_increments_picklist', incrementController.getPickList);
+
+router.get('/get_filter_picklist', incrementController.fetchFilterDropdown);
 
 module.exports = router;

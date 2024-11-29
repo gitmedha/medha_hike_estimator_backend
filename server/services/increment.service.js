@@ -118,6 +118,32 @@ const fetchIncrementDataById = async (id) => {
     }
   }
 
+
+  const fetchFilterDropdowns = async ()=>{
+    try {
+      const result = await incrementModel.fetchFilterDropdown();
+      const filterDropdowns = {
+        new_band: [],
+        tenure: [],
+        long_tenure: [],
+      };
+      console.log(result)
+      filterDropdowns.new_band = result.map((item) => ({
+        label: item.new_band,
+        value: item.new_band,
+      }));
+      
+      filterDropdowns.tenure = result.map((item) => ({
+        label: item.tenure,
+        value: item.tenure,
+      }));
+      return filterDropdowns;
+      
+    } catch (error) {
+      throw new Error(`Service Error: ${error.message}`);
+    }
+  }
+
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -127,5 +153,6 @@ const fetchIncrementDataById = async (id) => {
     filterIncrementData,
     searchIncrementData,
     getDropdownOptions,
-    getPickList
+    getPickList,
+    fetchFilterDropdowns
   };

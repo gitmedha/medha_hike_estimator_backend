@@ -55,6 +55,14 @@ const deleteIncrementData = async(id)=>{
     }
 }
 
+const fetchFilterDropdown = async()=>{
+    try {
+        picklistFields = await db('increment_details').select('new_band','tenure').distinct().whereNotNull('new_band','tenure');
+        return picklistFields;
+    } catch (error) {
+        throw new Error(`Error fetching filter dropdown data: ${error.message}`);
+    }
+}
 const filterIncrementData = async (fields,values,limit,offset) =>{
     try{
         if (fields.length !== values.length) {
@@ -73,7 +81,7 @@ const filterIncrementData = async (fields,values,limit,offset) =>{
         .offset(offset);
 
         return {
-            total: totalCount,
+            total: paginatedData.length,
             data: paginatedData,
         };
     }catch(err){
@@ -142,5 +150,6 @@ module.exports = {
     filterIncrementData,
     searchIncrementData,
     getSearchDropdowns,
-    getPickList
+    getPickList,
+    fetchFilterDropdown
 }

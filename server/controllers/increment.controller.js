@@ -60,7 +60,9 @@ const getIncrementData = async (req, res) => {
     }
   };
   const filterIncrementData = async (req, res) => {
-    const { fields, values, limit, offset } = req.body;
+    const { fields, values } = req.body;
+    console.log(req.body);
+    const { limit, offset} = req.params;
     try {
       const result = await incrementService.filterIncrementData(fields, values, limit, offset);
       return res.status(200).json(result);
@@ -102,6 +104,16 @@ const getIncrementData = async (req, res) => {
 
   }
 
+  const fetchFilterDropdown = async(req, res) => {
+    try {
+      const result = await incrementService.fetchFilterDropdowns();
+      return res.status(200).json(result);
+    } catch (err) {
+      console.error('Error fetching filter dropdown:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -111,5 +123,6 @@ module.exports = {
     filterIncrementData,
     searchIncrementData,
     getSearchDropdowns,
-    getPickList
+    getPickList,
+    fetchFilterDropdown
 }
