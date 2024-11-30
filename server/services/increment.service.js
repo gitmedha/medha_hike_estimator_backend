@@ -144,6 +144,115 @@ const fetchIncrementDataById = async (id) => {
     }
   }
 
+
+  const calculateAverage =(values)=>{
+    try {
+    if (!values || values.length === 0) return 0;
+      const sum = values.reduce((acc, value) => acc + value, 0);
+      return sum / values.length;
+    } catch (error) {
+      throw new Error("Calculating average error: " + error.message);
+      
+    }
+  }
+  function calculateStandardDeviation(values) {
+    try {
+      
+    if (!values || values.length === 0) return 0;
+
+    const mean = calculateAverage(values);
+    const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+    const meanSquaredDiff = calculateAverage(squaredDiffs);
+    return Math.sqrt(meanSquaredDiff);
+      
+      
+    } catch (error) {
+      throw new Error("Error while calculating standard deviation"+ error.message);
+      
+    }
+}
+
+const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+  
+  if(!STDEVP){
+    //historical data for the same manager
+    const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
+    console.log(historicalRatings);
+    if(historicalRatings){
+
+      //combine average for all the reportees of current ratings and historical ratings
+     return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
+    }
+    else {
+
+      //average for all the employees of the current data
+     return calculateAverage([...allRatings])
+    }
+  }
+  else {
+   return calculateAverage([ratings,...peerRatings]);
+  }
+}
+
+const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+  if(!STDEVP){
+    const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
+    console.log(historicalRatings)
+    if(historicalRatings){
+      return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
+    }else {
+      return calculateStandardDeviation([...allRatings])
+    }
+  }else {
+   return calculateStandardDeviation([ratings,...peerRatings]);
+  }
+
+}
+
+function calculateStandardizedValue(value, mean, stdDev) {
+  if (stdDev === 0) {
+      throw new Error("Standard deviation is zero, cannot standardize.");
+  }
+  return (value - mean) / stdDev;
+}
+
+const getNormalizedRating = async (data)=>{
+  try {
+    const ratings = await incrementModel.getEmployeeRating(data.employeeId);
+
+    // const ratings = data.employeeRating = 3.1 manager name Byomkesh Mishra this is testing when historical data is available 
+    //const ratings = 3.3 manager name Saurabh rai when historical data is not available
+
+    if(ratings.length){
+
+      //peer ratings for the same manager
+      const peerRatings = await incrementModel.getPeerRatings(data.managerName, data.employeeId);
+
+      // const peerRatings = [3.0,3.9,3.7,3.6] - Byomkesh Mishra reportee data
+      // const peerRatings = [3.5,4.0,3.0,3.3] - Saurabh Rai reportee data
+
+      //population standard deviation for the all reportees
+
+      const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
+
+      const allRatings = await incrementModel.getAllRatings();
+      
+      const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,data.managerName);
+      const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,data.managerName);
+
+      const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+      return parseFloat(normalizedRating.toFixed(2));
+    }
+    else {
+      throw new Error("No ratings found for the employee");
+    }
+    
+  } catch (error) {
+    console.log(error)
+    throw new Error("Error while calculating normalized rating"+ error.message);
+  }
+}
+
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -154,5 +263,6 @@ const fetchIncrementDataById = async (id) => {
     searchIncrementData,
     getDropdownOptions,
     getPickList,
-    fetchFilterDropdowns
+    fetchFilterDropdowns,
+    getNormalizedRating
   };

@@ -130,7 +130,6 @@ const getSearchDropdowns = async(Field) => {
 
 const getPickList = async()=>{
     try{
-        // const pickList = await db('increment_details').select("manager","employee_id", "full_name").distinct().offset(0).limit(100);
         const employees = await db('employee_details').select("employee_id", "first_name", "last_name").distinct();
         const managers = await db('historical_data').select('reviewer').distinct();
         return {
@@ -139,6 +138,50 @@ const getPickList = async()=>{
         };
     }catch(err){
         throw new Error('Error fetching picklist values');
+    }
+}
+
+
+const getEmployeeRating = async (employeeId)=>{
+    try{
+        const employeeRating = await db('increment_details').select('average').where('employee_id ',employeeId);
+        return employeeRating;
+    }catch(err){
+        throw new Error('Error fetching employee ratings');
+    }
+}
+
+const getPeerRatings = async (managerName,employeeID)=>{
+    try{
+        if (!managerName) {
+            throw new Error('Manager name is required');
+        }
+        const peerRatings = await db('increment_details').select('average').where('manager', managerName).andWhereNot('employee_id',employeeID);
+        const peerRatingsList = peerRatings.map(rating => rating.average);
+        return peerRatingsList;
+
+    }catch(err){
+        throw new Error('Error fetching peer ratings');
+    }
+}
+
+const getHistoricalRatings = async (managerName)=>{
+    try{
+        const historicalRatings = await db('historical_data').select('final_score').where('reviewer',managerName);
+        const historicalRatingList = historicalRatings.map(historicalRating=>historicalRating.final_score);
+        return historicalRatingList;
+    }catch(err){
+        throw new Error('Error fetching historical ratings');
+    }
+}
+
+const getAllRatings = async ()=>{
+    try{
+        const allRatings = await db('increment_details').select('average');
+        const allRatingsList = allRatings.map(rating => rating.average);
+        return allRatingsList;
+    }catch(err){
+        throw new Error('Error fetching all ratings');
     }
 }
 module.exports = {
@@ -151,5 +194,9 @@ module.exports = {
     searchIncrementData,
     getSearchDropdowns,
     getPickList,
-    fetchFilterDropdown
+    fetchFilterDropdown,
+    getEmployeeRating,
+    getPeerRatings,
+    getHistoricalRatings,
+    getAllRatings
 }

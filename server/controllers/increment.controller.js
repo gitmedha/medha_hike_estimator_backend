@@ -114,6 +114,16 @@ const getIncrementData = async (req, res) => {
     }
   }
 
+  const getNormalizedRating = async (req,res)=>{
+    try {
+      console.log(req.body)
+      const result = await incrementService.getNormalizedRating(req.body);
+      return res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching normalized rating', details: error.message });
+    }
+  }
+  
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -124,5 +134,6 @@ module.exports = {
     searchIncrementData,
     getSearchDropdowns,
     getPickList,
-    fetchFilterDropdown
+    fetchFilterDropdown,
+    getNormalizedRating
 }
