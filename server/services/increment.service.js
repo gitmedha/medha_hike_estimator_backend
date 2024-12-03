@@ -177,9 +177,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
   if(!STDEVP){
     //historical data for the same manager
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
-    console.log(historicalRatings);
     if(historicalRatings){
-
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
     }
@@ -218,16 +216,17 @@ function calculateStandardizedValue(value, mean, stdDev) {
 
 const getNormalizedRating = async (data)=>{
   try {
-    const ratings = await incrementModel.getEmployeeRating(data.employeeId);
+    const ratings = data.ratings ? Number(data.ratings):0;
+    const {reviewCycle,employeeId,managerName} = data
 
     // const ratings = data.employeeRating = 3.1 manager name Byomkesh Mishra this is testing when historical data is available 
     // const ratings = 4.4 
     //manager name Saurabh rai when historical data is not available
 
-    if(ratings.length){
+    if(ratings){
 
       //peer ratings for the same manager
-      const peerRatings = await incrementModel.getPeerRatings(data.managerName, data.employeeId);
+      const peerRatings = await incrementModel.getPeerRatings(managerName, employeeId,reviewCycle);
 
       // const peerRatings = [3.0,3.9,3.7,3.6] - Byomkesh Mishra reportee data
       // const peerRatings = [3.5,3.0,2.7,4.1]
@@ -239,10 +238,12 @@ const getNormalizedRating = async (data)=>{
 
       const allRatings = await incrementModel.getAllRatings();
       
-      const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,data.managerName);
-      const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,data.managerName);
+      const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+      const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
 
       const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+      
+      await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle)
       return parseFloat(normalizedRating.toFixed(2));
     }
     else {
@@ -255,9 +256,9 @@ const getNormalizedRating = async (data)=>{
   }
 }
 
-const getIncrement = async(normalized_rating)=>{
+const getIncrement = async(normalizedRating,employeeId,reviewCycle)=>{
   try {
-    const result = await incrementModel.getIncrement(normalized_rating);
+    const result = await incrementModel.getIncrement(normalizedRating,employeeId,reviewCycle);
     return result;
   } catch (error) {
     throw new Error(`Service Error: Unable to fetch increment data. ${error.message}`);

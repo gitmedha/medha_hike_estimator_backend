@@ -124,9 +124,9 @@ const getIncrementData = async (req, res) => {
   }
 
   const getIncrement = async (req, res) => {
-    const { normalized_rating } = req.params;
+    const { normalizedRating ,employeeId,reviewCycle} = req.body;
     try {
-      const result = await incrementService.getIncrement(normalized_rating);
+      const result = await incrementService.getIncrement(normalizedRating,employeeId,reviewCycle);
       if (result.length === 0) {
         return res.status(404).json({ message: 'Increment not found' });
       }
@@ -148,7 +148,6 @@ const getWeightedIncrement = async(req, res) => {
     console.error('Error fetching weighted increment:', err.message);
     return res.status(500).json({ error: err.message });
   }
- 
 }
   
 module.exports = {

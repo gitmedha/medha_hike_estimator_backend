@@ -144,23 +144,31 @@ const getPickList = async()=>{
 
 const getEmployeeRating = async (employeeId)=>{
     try{
-        const employeeRating = await db('increment_details').select('average').where('employee_id ',employeeId);
+        const employeeRating = await db('increment_details')
+        .select('average')
+        .where('employee_id ',employeeId)
+        // .andWhere('appraisal_cycle',reviewCycle)
         return employeeRating;
     }catch(err){
+        console.log(err);
         throw new Error('Error fetching employee ratings');
     }
 }
 
-const getPeerRatings = async (managerName,employeeID)=>{
+const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
     try{
         if (!managerName) {
             throw new Error('Manager name is required');
         }
-        const peerRatings = await db('increment_details').select('average').where('manager', managerName).andWhereNot('employee_id',employeeID);
-        const peerRatingsList = peerRatings.map(rating => rating.average);
+        const peerRatings = await db('increment_details')
+        .select('average').where('manager', managerName)
+        .andWhere('appraisal_cycle',reviewCycle)
+        .andWhereNot('employee_id',employeeID);
+        const peerRatingsList = peerRatings.map(rating => parseFloat(rating.average));
         return peerRatingsList;
 
     }catch(err){
+
         throw new Error('Error fetching peer ratings');
     }
 }
@@ -177,7 +185,9 @@ const getHistoricalRatings = async (managerName)=>{
 
 const getAllRatings = async ()=>{
     try{
-        const allRatings = await db('increment_details').select('average');
+        const allRatings = await db('increment_details')
+        .select('average')
+        // .andWhere('appraisal_cycle',reviewCycle);
         const allRatingsList = allRatings.map(rating => rating.average);
         return allRatingsList;
     }catch(err){
@@ -185,16 +195,21 @@ const getAllRatings = async ()=>{
     }
 }
 
-const getIncrement = async (inputValue)=> {
+const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
     try {
-    console.log(inputValue);
       const result = await db('increment_measurements')
         .select('increment_range', 'increment_percentage')
-        .where('increment_range', '>=', inputValue)
+        .where('increment_range', '>=', normalizedRating)
         .orderBy('increment_range', 'asc')
         .first(); 
+
+        
   
       if (result) {
+        await db('increment_details')
+        .where('employee_id', employeeId)
+        .andWhere('appraisal_cycle', reviewCycle)
+        .update('increment', result.increment_percentage);
         return result.increment_percentage;
       }
   
@@ -205,6 +220,19 @@ const getIncrement = async (inputValue)=> {
     }
   }
 
+const updateNormalizedRatings = async (employeeID,rating,reviewCycle) =>{
+    try{
+        const updatedRating = await db('increment_details')
+        .where('employee_id', employeeID)
+        .andWhere('appraisal_cycle',reviewCycle)
+        .update('normalize_rating', rating);
+
+        return updatedRating;
+    }catch(err){
+        console.log(err);
+        throw new Error('Error updating normalized rating');
+    }
+}
 
 const getWeightedIncrement = async (employee_id,biAnnualIncrement,annualIncrement)=>{
     try{
@@ -226,9 +254,10 @@ module.exports = {
     getSearchDropdowns,
     getPickList,
     fetchFilterDropdown,
-    getEmployeeRating,
+    // getEmployeeRating,
     getPeerRatings,
     getHistoricalRatings,
     getAllRatings,
-    getIncrement
+    getIncrement,
+    updateNormalizedRatings
 }
