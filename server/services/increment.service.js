@@ -221,7 +221,8 @@ const getNormalizedRating = async (data)=>{
     const ratings = await incrementModel.getEmployeeRating(data.employeeId);
 
     // const ratings = data.employeeRating = 3.1 manager name Byomkesh Mishra this is testing when historical data is available 
-    //const ratings = 3.3 manager name Saurabh rai when historical data is not available
+    // const ratings = 4.4 
+    //manager name Saurabh rai when historical data is not available
 
     if(ratings.length){
 
@@ -229,6 +230,7 @@ const getNormalizedRating = async (data)=>{
       const peerRatings = await incrementModel.getPeerRatings(data.managerName, data.employeeId);
 
       // const peerRatings = [3.0,3.9,3.7,3.6] - Byomkesh Mishra reportee data
+      // const peerRatings = [3.5,3.0,2.7,4.1]
       // const peerRatings = [3.5,4.0,3.0,3.3] - Saurabh Rai reportee data
 
       //population standard deviation for the all reportees
@@ -253,6 +255,23 @@ const getNormalizedRating = async (data)=>{
   }
 }
 
+const getIncrement = async(normalized_rating)=>{
+  try {
+    const result = await incrementModel.getIncrement(normalized_rating);
+    return result;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch increment data. ${error.message}`);
+  }
+}
+
+const getWeightedIncrement = async (id,biAnnualIncrement,annualIncrement)=>{
+  try {
+    const result = await incrementModel.getWeightedIncrement(id,biAnnualIncrement,annualIncrement);
+    return result;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch weighted increment data. ${error.message}`);
+  }
+}
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -264,5 +283,6 @@ const getNormalizedRating = async (data)=>{
     getDropdownOptions,
     getPickList,
     fetchFilterDropdowns,
-    getNormalizedRating
+    getNormalizedRating,
+    getIncrement
   };

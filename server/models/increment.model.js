@@ -184,6 +184,37 @@ const getAllRatings = async ()=>{
         throw new Error('Error fetching all ratings');
     }
 }
+
+const getIncrement = async (inputValue)=> {
+    try {
+    console.log(inputValue);
+      const result = await db('increment_measurements')
+        .select('increment_range', 'increment_percentage')
+        .where('increment_range', '>=', inputValue)
+        .orderBy('increment_range', 'asc')
+        .first(); 
+  
+      if (result) {
+        return result.increment_percentage;
+      }
+  
+      return null;
+    } catch (error) {
+      console.error('Error querying the database:', error);
+      throw error;
+    }
+  }
+
+
+const getWeightedIncrement = async (employee_id,biAnnualIncrement,annualIncrement)=>{
+    try{
+        const weightedIncrement = await db('increment_details').select('bi_annual_increment', 'annualIncrement').where('employee_id', employee_id);
+        return weightedIncrement;
+    }catch(err){
+        throw new Error('Error fetching weighted increment');
+    }
+}
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -198,5 +229,6 @@ module.exports = {
     getEmployeeRating,
     getPeerRatings,
     getHistoricalRatings,
-    getAllRatings
+    getAllRatings,
+    getIncrement
 }

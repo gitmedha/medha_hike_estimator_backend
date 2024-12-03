@@ -32,4 +32,9 @@ router.get('/get_filter_picklist', incrementController.fetchFilterDropdown);
 
 router.post('/calculate_normalized_rating', incrementController.getNormalizedRating);
 
+router.get('/get_increment/:normalized_rating', incrementController.getIncrement);
+
+router.post('/get_weighted_increment', incrementController.getWeightedIncrement);
+
+
 module.exports = router;

@@ -116,13 +116,40 @@ const getIncrementData = async (req, res) => {
 
   const getNormalizedRating = async (req,res)=>{
     try {
-      console.log(req.body)
       const result = await incrementService.getNormalizedRating(req.body);
       return res.status(200).json(result);
     } catch (error) {
       res.status(500).json({ error: 'Error fetching normalized rating', details: error.message });
     }
   }
+
+  const getIncrement = async (req, res) => {
+    const { normalized_rating } = req.params;
+    try {
+      const result = await incrementService.getIncrement(normalized_rating);
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'Increment not found' });
+      }
+      return res.status(200).json({ message:"Inrement calculated successfully", data: `${result}%` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+const getWeightedIncrement = async(req, res) => {
+  const { annualIncrement , biAnnualIncrement, employee_id} = req.body;
+  try {
+    const result = await incrementService.getWeightedIncrement(employee_id,biAnnualIncrement,annualIncrement);
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Increment not found' });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching weighted increment:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+ 
+}
   
 module.exports = {
     getIncrementData,
@@ -135,5 +162,7 @@ module.exports = {
     getSearchDropdowns,
     getPickList,
     fetchFilterDropdown,
-    getNormalizedRating
+    getNormalizedRating,
+    getIncrement,
+    getWeightedIncrement
 }
