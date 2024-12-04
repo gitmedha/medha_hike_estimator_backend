@@ -7,6 +7,7 @@ const employeeService = require('../services/employee.services');
 const createEmployee = async(req, res) => {
   try {
     const employeeData = req.body;
+    
     const result = await employeeService.createEmployee(employeeData);
     res.status(201).json(result);
     

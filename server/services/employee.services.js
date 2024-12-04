@@ -83,6 +83,10 @@ const getEmployeeDropDowns = async ()=>{
 
 const createEmployee = async(employeeData)=>{
   try {
+    const employee = await employeeModel.checkIfExists(employeeData.employee_id);
+    if(employee){
+      throw new Error("Employee ID already exists");
+    }
     const result = await employeeModel.createEmployee(employeeData);
     return {
       data: result

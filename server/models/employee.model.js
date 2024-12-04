@@ -139,7 +139,14 @@ const getDropDownValues = async ()=>{
     throw new Error(e.message);
   }
 }
-
+const checkIfExists = async(employeeId) =>{
+  try {
+    const employee = await db('employee_details').select("*").where('employee_id', employeeId);
+    return employee;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
 const createEmployee = async (employeeData) => {
   try {
     const [newEmployee] = await db('employee_details')
@@ -198,5 +205,6 @@ module.exports = {
   getDropDownValues,
   createEmployee,
   updateEmployeeQuery,
-  deleteEmployeeQuery
+  deleteEmployeeQuery,
+  checkIfExists
 };
