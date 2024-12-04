@@ -73,7 +73,7 @@ const getIncrementData = async (req, res) => {
   };
 
   const searchIncrementData = async (req, res) => {
-    const { field, value, offset, limit } = req.query;
+    const { field, value, offset, limit } = req.body;
     try {
       const result = await incrementService.searchIncrementData(field, value, Number(offset), Number(limit));
       return res.status(200).json(result);

@@ -21,7 +21,7 @@ router.delete('/delete-increment-data/:id', incrementController.deleteIncrementD
 router.post('/add-filter-increment-data/:offset/:limit', incrementController.filterIncrementData);
 
 // Route to search increment data by field and value
-router.get('/search-increment-data', incrementController.searchIncrementData);
+router.post('/search-increment-data', incrementController.searchIncrementData);
 
 // Route to get dropdown options for a specific field
 router.get('/search-dropdowns/:field', incrementController.getSearchDropdowns);

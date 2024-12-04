@@ -68,6 +68,7 @@ const fetchIncrementDataById = async (id) => {
 
   const searchIncrementData = async (field, value, offset, limit) => {
     try {
+      console.log(field,value, offset, limit)
       const result = await incrementModel.searchIncrementData(field, value, offset, limit);
       return result;
     } catch (err) {
