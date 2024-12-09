@@ -149,7 +149,35 @@ const getWeightedIncrement = async(req, res) => {
     return res.status(500).json({ error: err.message });
   }
 }
-  
+
+const getIncrementByReviewCycle = async(req,res)=>{
+  const {employeeID, reviewCycle } = req.body;
+  try {
+    const result = await incrementService.getIncrementDataByReviewCycle(employeeID,reviewCycle);
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Increment not found for the given review cycle' });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching increment by review cycle:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+const getHistoricalData = async(req,res)=>{
+  const { employeeName } = req.body;
+  try {
+    const result = await incrementService.getHistoricalData(employeeName);
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Historical data not found for the given employee and review cycle' });
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching historical data:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -163,5 +191,7 @@ module.exports = {
     fetchFilterDropdown,
     getNormalizedRating,
     getIncrement,
-    getWeightedIncrement
+    getWeightedIncrement,
+    getIncrementByReviewCycle,
+    getHistoricalData
 }

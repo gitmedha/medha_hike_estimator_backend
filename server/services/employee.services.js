@@ -81,12 +81,18 @@ const getEmployeeDropDowns = async ()=>{
   }
 }
 
+const checkIfExists = async(employeeID)=>{
+  try {
+    const employee = await employeeModel.checkIfExists(employeeID);
+    return employee;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while checking if employee ID exists"+ error.message);
+  }
+}
 const createEmployee = async(employeeData)=>{
   try {
-    const employee = await employeeModel.checkIfExists(employeeData.employee_id);
-    if(employee){
-      throw new Error("Employee ID already exists");
-    }
+  
     const result = await employeeModel.createEmployee(employeeData);
     return {
       data: result
@@ -125,5 +131,6 @@ module.exports = {
   getEmployeeDropDowns,
   createEmployee,
   updateEmployeeService,
-  deleteEmployeeService
+  deleteEmployeeService,
+  checkIfExists
 };

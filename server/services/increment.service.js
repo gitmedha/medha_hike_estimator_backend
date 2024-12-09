@@ -274,6 +274,25 @@ const getWeightedIncrement = async (id,biAnnualIncrement,annualIncrement)=>{
     throw new Error(`Service Error: Unable to fetch weighted increment data. ${error.message}`);
   }
 }
+
+const getIncrementDataByReviewCycle = async (employeeID,reviewCycle)=>{
+  try {
+    const result = await incrementModel.getIncrementDataByReviewCycle(employeeID,reviewCycle);
+    return result;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch increment data. ${error.message}`);
+  }
+}
+
+const getHistoricalData = async (employeeName)=>{
+  try {
+    const result = await incrementModel.getHistoricalData(employeeName);
+    return result;
+  } catch (error) {
+    console.log(error)
+    throw new Error(`Service Error: Unable to fetch historical data. ${error.message}`);
+  }
+}
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -286,5 +305,7 @@ const getWeightedIncrement = async (id,biAnnualIncrement,annualIncrement)=>{
     getPickList,
     fetchFilterDropdowns,
     getNormalizedRating,
-    getIncrement
+    getIncrement,
+    getIncrementDataByReviewCycle,
+    getHistoricalData
   };

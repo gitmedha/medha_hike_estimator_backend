@@ -243,6 +243,25 @@ const getWeightedIncrement = async (employee_id,biAnnualIncrement,annualIncremen
     }
 }
 
+
+const getIncrementDataByReviewCycle = async(employeeID,reviewCycle)=>{
+    try{
+        const incrementData = await db('increment_details').select("*").where('appraisal_cycle', reviewCycle).andWhere('employee_id', employeeID)
+        return incrementData;
+    }catch(err){
+        throw new Error('Error fetching increment data by review cycle');
+    }
+}
+
+const getHistoricalData = async (emplyeeName)=>{
+    try{
+        const historicalData = await db('historical_data').select("*").where('employee', emplyeeName);
+        return historicalData;
+    }catch(err){
+        console.log(err)
+        throw new Error('Error fetching historical data');
+    }
+}
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -259,5 +278,7 @@ module.exports = {
     getHistoricalRatings,
     getAllRatings,
     getIncrement,
-    updateNormalizedRatings
+    updateNormalizedRatings,
+    getIncrementDataByReviewCycle,
+    getHistoricalData
 }

@@ -36,4 +36,10 @@ router.post('/get_increment', incrementController.getIncrement);
 
 router.post('/get_weighted_increment', incrementController.getWeightedIncrement);
 
+router.post('/get_increment_by_review_cycle', incrementController.getIncrementByReviewCycle);
+
+router.post('/get_historical_data_increment', incrementController.getHistoricalData)
+
+
+
 module.exports = router;

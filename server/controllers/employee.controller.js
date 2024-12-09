@@ -6,13 +6,19 @@ const employeeService = require('../services/employee.services');
  */
 const createEmployee = async(req, res) => {
   try {
+
     const employeeData = req.body;
+    const employee = employeeService.checkIfExists(employeeData.employee_id);
+
+    if(employee){
+     return res.status(400).json({error:'Duplicate entry', message: 'Employee already exists'})
+    }
     
     const result = await employeeService.createEmployee(employeeData);
-    res.status(201).json(result);
+    return res.status(201).json(result);
     
   } catch (error) {
-    return res.status(400).json({error: "Error creating employee", message: error.message});
+    return res.status(500).json({error: "Error creating employee", message: error.message});
   }
 }
 
