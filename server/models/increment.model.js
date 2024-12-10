@@ -18,14 +18,29 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
     }
 }
 
-const getIncrementDataById = async(id)=>{
-    try{
-        const incrementData = await db('increment_details').select("*").where('id', id);
-        return incrementData;
-    }catch(err){
-        throw new Error('Error fetching increment data by ID');
+const getIncrementDataById = async (id) => {
+    try {
+      const incrementData = await db('increment_details')
+        .select(
+          'increment_details.*',
+          'employee_details.department',
+          'employee_details.title',
+          'employee_details.employee_status'
+        )
+        .innerJoin(
+          'employee_details',
+          'increment_details.employee_id',
+          'employee_details.employee_id'
+        )
+        .where('increment_details.employee_id', id);
+  
+      return incrementData;
+    } catch (err) {
+      console.error(err);
+      throw new Error('Error fetching increment data by ID');
     }
-}
+  };
+  
 
 const createIncrementData = async(incrementData)=>{
     try{
