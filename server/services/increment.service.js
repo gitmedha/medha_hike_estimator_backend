@@ -128,7 +128,6 @@ const fetchIncrementDataById = async (id) => {
         tenure: [],
         long_tenure: [],
       };
-      console.log(result)
       filterDropdowns.new_band = result.map((item) => ({
         label: item.new_band,
         value: item.new_band,
@@ -147,6 +146,8 @@ const fetchIncrementDataById = async (id) => {
 
 
   const calculateAverage =(values)=>{
+    console.log("calculateAverage",values)
+    console.log("length",values.length)
     try {
     if (!values || values.length === 0) return 0;
       const sum = values.reduce((acc, value) => acc + value, 0);
@@ -165,8 +166,6 @@ const fetchIncrementDataById = async (id) => {
     const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
     const meanSquaredDiff = calculateAverage(squaredDiffs);
     return Math.sqrt(meanSquaredDiff);
-      
-      
     } catch (error) {
       throw new Error("Error while calculating standard deviation"+ error.message);
       
@@ -196,7 +195,6 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
 const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
   if(!STDEVP){
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
-    console.log(historicalRatings)
     if(historicalRatings){
       return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
     }else {
@@ -209,6 +207,10 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 }
 
 function calculateStandardizedValue(value, mean, stdDev) {
+  console.log("value",value);
+  console.log("mean",mean);
+  console.log("stdDev",stdDev);
+
   if (stdDev === 0) {
       throw new Error("Standard deviation is zero, cannot standardize.");
   }
@@ -219,32 +221,23 @@ const getNormalizedRating = async (data)=>{
   try {
     const ratings = data.ratings ? Number(data.ratings):0;
     const {reviewCycle,employeeId,managerName} = data
-
-    // const ratings = data.employeeRating = 3.1 manager name Byomkesh Mishra this is testing when historical data is available 
-    // const ratings = 4.4 
-    //manager name Saurabh rai when historical data is not available
-
+    
     if(ratings){
 
       //peer ratings for the same manager
       const peerRatings = await incrementModel.getPeerRatings(managerName, employeeId,reviewCycle);
 
-      // const peerRatings = [3.0,3.9,3.7,3.6] - Byomkesh Mishra reportee data
-      // const peerRatings = [3.5,3.0,2.7,4.1]
-      // const peerRatings = [3.5,4.0,3.0,3.3] - Saurabh Rai reportee data
-
       //population standard deviation for the all reportees
 
       const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
-
+    
       const allRatings = await incrementModel.getAllRatings();
       
       const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
       const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
 
       const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
-      
-      await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle)
+      await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
       return parseFloat(normalizedRating.toFixed(2));
     }
     else {

@@ -20,6 +20,10 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
 
 const getIncrementDataById = async (id) => {
     try {
+        
+        const ifExists = (await db('increment_details').select('*').where('employee_id',id)).length && (await db('employee_details').select('*').where('employee_id',id)).length;
+        if(!ifExists) throw new Error('Employee not found');
+        
       const incrementData = await db('increment_details')
         .select(
           'increment_details.*',
@@ -33,6 +37,7 @@ const getIncrementDataById = async (id) => {
           'employee_details.employee_id'
         )
         .where('increment_details.employee_id', id);
+        console.log("incrementData",incrementData)
   
       return incrementData;
     } catch (err) {

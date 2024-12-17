@@ -61,7 +61,6 @@ const getIncrementData = async (req, res) => {
   };
   const filterIncrementData = async (req, res) => {
     const { fields, values } = req.body;
-    console.log(req.body);
     const { limit, offset} = req.params;
     try {
       const result = await incrementService.filterIncrementData(fields, values, limit, offset);
@@ -116,6 +115,7 @@ const getIncrementData = async (req, res) => {
 
   const getNormalizedRating = async (req,res)=>{
     try {
+      console.log(req.body)
       const result = await incrementService.getNormalizedRating(req.body);
       return res.status(200).json(result);
     } catch (error) {
