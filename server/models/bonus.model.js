@@ -108,6 +108,27 @@ const updateBonus = async (id,updateData)=>{
         throw new Error(error.message);
     }
 }
+
+const insertBulkData = async(data)=>{
+    try{
+        if(Object.keys(data).length === 6){
+            await db('bonus_details').insert({
+                employee_id: data.id,
+                full_name: data.name,
+                kra: parseFloat(parseFloat(data.kra).toFixed(1)),
+                compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
+                average: parseFloat(parseFloat(data.average).toFixed(1)),
+                review_cycle: 'April-Sep 2022',
+                manager: data.manager,
+            });
+        }
+        return;
+    
+    } catch(error){
+        throw new Error(error.message);
+    }
+
+}
 module.exports = {
     getBonus,
     getBonusDropdown,
@@ -115,5 +136,6 @@ module.exports = {
     createBonus,
     getBonusById,
     getBonusPickLists,
-    updateBonus
+    updateBonus,
+    insertBulkData
 }

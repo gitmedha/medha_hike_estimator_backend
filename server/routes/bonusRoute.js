@@ -1,4 +1,6 @@
 const express = require('express');
+const upload = require('../middlewares/multer');
+
 const router = express.Router();
 
 const {
@@ -11,7 +13,8 @@ const {
     searchBonus,
     loadDropDown,
     normalizedRating,
-    calculateBonus
+    calculateBonus,
+    uploadBonusFile
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -51,6 +54,10 @@ router.post('/get_normalized_rating',normalizedRating);
 //calculate bonus
 
 router.post('/calculate_bonus',calculateBonus);
+
+// Upload bonus excel data
+
+router.post('/upload_bonus_data', upload.single('file'),uploadBonusFile);
 
 
 module.exports = router;

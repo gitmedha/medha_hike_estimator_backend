@@ -1,3 +1,5 @@
+const xlsx = require('xlsx');
+
 const {
     getBonus,
     getBonusDropdown,
@@ -5,7 +7,8 @@ const {
     createBonus,
     getBonusById,
     getBonusPickLists,
-    updateBonus
+    updateBonus,
+    insertBulkData
 } = require("../models/bonus.model");
 
 const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
@@ -115,6 +118,58 @@ const getPickLists = async ()=>{
     }
  }
 
+
+ const uploadBonusData = async (req) => {
+    try {
+      const filePath = req.file.path;
+      const workbook = xlsx.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = xlsx.utils.sheet_to_json(worksheet);
+  
+      const requiredFields = {
+        id: '__EMPTY',
+        name: '__EMPTY_1',
+        kra: 'Apr - Mar 2023',
+        competency: '__EMPTY_2',
+        average: '__EMPTY_3',
+        manager: '__EMPTY_4',
+      };
+  
+      const filteredDataDynamic = [];
+      for (const row of data.slice(1)) {
+        const result = {};
+        let isValid = true;
+  
+        for (const [key, value] of Object.entries(requiredFields)) {
+          result[key] = row[value];
+  
+          if (!result[key]) {
+            isValid = false;
+          }
+        }
+  
+        if (isValid) {
+          filteredDataDynamic.push(result);
+        }
+  
+        if (result.id === "M0135") {
+          break;
+        }
+      }
+  
+      // Insert filtered data in bulk
+      for (const row of filteredDataDynamic) {
+        await insertBulkData(row);
+      }
+  
+    } catch (error) {
+      console.error('Error in uploadBonusData:', error.message);
+      throw error;
+    }
+  };
+  
+
 module.exports = {
     fetchAllBonusService,
     searchDropDownService,
@@ -122,5 +177,6 @@ module.exports = {
     createBonusService,
     getBonusByIdService,
     getPickLists,
-    updateBonusService
+    updateBonusService,
+    uploadBonusData
 }

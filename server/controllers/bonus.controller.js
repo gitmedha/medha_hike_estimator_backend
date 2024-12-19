@@ -5,7 +5,8 @@ const {
     createBonusService,
     getBonusByIdService,
     getPickLists,
-    updateBonusService
+    updateBonusService,
+    uploadBonusData
 } = require("../services/bonus.services");
 
 const fetchAllBonus = async(req,res)=>{
@@ -96,6 +97,19 @@ const calculateBonus = async(req,res)=>{
 
 };
 
+const uploadBonusFile = async(req,res)=>{
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded!' });
+        }
+
+        const result = await uploadBonusData(req);
+        return res.status(200).json(result);
+        
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
  
 module.exports ={
     fetchAllBonus,
@@ -107,5 +121,6 @@ module.exports ={
     searchBonus,
     loadDropDown,
     normalizedRating,
-    calculateBonus
+    calculateBonus,
+    uploadBonusFile
 }
