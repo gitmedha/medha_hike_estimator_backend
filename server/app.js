@@ -27,11 +27,13 @@ const employeeRoutes = require('./routes/employeeRoutes');
 const historicalRoutes = require('./routes/historicalRoutes');
 const userRoutes = require('./routes/userRoutes');
 const incrementalRoutes = require('./routes/incrementRoutes');
+const bonuses = require('./routes/bonusRoute')
 
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/historical_data',historicalRoutes);
 app.use('/api/increments',incrementalRoutes);
+app.use('/api/bonuses',bonuses)
 
 module.exports = app;
