@@ -154,7 +154,7 @@ const getAllRatings = async ()=>{
         const allRatings = await db('bonus_details')
         .select('average')
         // .andWhere('appraisal_cycle',reviewCycle);
-        const allRatingsList = allRatings.map(rating => rating.average);
+        const allRatingsList = allRatings.map(rating => parseFloat(rating.average));
         return allRatingsList;
     }catch(err){
         throw new Error('Error fetching all ratings');
@@ -164,7 +164,7 @@ const getAllRatings = async ()=>{
 const getHistoricalRatings = async (managerName)=>{
     try{
         const historicalRatings = await db('historical_data').select('final_score').where('reviewer',managerName);
-        const historicalRatingList = historicalRatings.map(historicalRating=>historicalRating.final_score);
+        const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
         return historicalRatingList;
     }catch(err){
         throw new Error('Error fetching historical ratings');

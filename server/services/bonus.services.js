@@ -219,7 +219,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
 const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
   if(!STDEVP){
     const historicalRatings = await getHistoricalRatings(managerName);
-    if(historicalRatings){
+    if(historicalRatings.length){
       return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
     }else {
       return calculateStandardDeviation([...allRatings])

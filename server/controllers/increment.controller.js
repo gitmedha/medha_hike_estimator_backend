@@ -1,4 +1,5 @@
 const incrementService = require('../services/increment.service');
+const incrementModel = require('../models/increment.model');
 
 
 const getIncrementData = async (req, res) => {
@@ -115,8 +116,8 @@ const getIncrementData = async (req, res) => {
 
   const getNormalizedRating = async (req,res)=>{
     try {
-      console.log(req.body)
       const result = await incrementService.getNormalizedRating(req.body);
+      await incrementModel.updateNormalizedRatings(req.body.employeeId,result.toFixed(2),req.body.reviewCycle);
       return res.status(200).json(result);
     } catch (error) {
       res.status(500).json({ error: 'Error fetching normalized rating', details: error.message });

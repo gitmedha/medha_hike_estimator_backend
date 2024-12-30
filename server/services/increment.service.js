@@ -176,7 +176,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
   if(!STDEVP){
     //historical data for the same manager
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
-    if(historicalRatings){
+    if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
     }
@@ -187,6 +187,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
     }
   }
   else {
+  console.log("All average")
    return calculateAverage([ratings,...peerRatings]);
   }
 }
@@ -194,7 +195,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
 const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
   if(!STDEVP){
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
-    if(historicalRatings){
+    if(historicalRatings.length){
       return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
     }else {
       return calculateStandardDeviation([...allRatings])
@@ -212,7 +213,7 @@ function calculateStandardizedValue(value, mean, stdDev) {
   }
   return (value - mean) / stdDev;
   }catch(err){
-    throw new Error("Error while calculating standardized value: "+ error.message);
+    throw new Error("Error while calculating standardized value: "+ err.message);
   }
 
 }
@@ -230,13 +231,12 @@ const getNormalizedRating = async (data)=>{
 
       const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
     
-      const allRatings = await incrementModel.getAllRatings();
-      
+      const allRatings = await incrementModel.getAllRatings();      
       const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
       const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
       const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
-     
-      // await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
+      
+      
       return parseFloat(normalizedRating.toFixed(2));
     }
     else {
