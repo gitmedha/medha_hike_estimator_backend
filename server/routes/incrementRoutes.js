@@ -38,7 +38,9 @@ router.post('/get_weighted_increment', incrementController.getWeightedIncrement)
 
 router.post('/get_increment_by_review_cycle', incrementController.getIncrementByReviewCycle);
 
-router.post('/get_historical_data_increment', incrementController.getHistoricalData)
+router.post('/get_historical_data_increment', incrementController.getHistoricalData);
+
+router.get('/calculate_bulk_normalized_rating',incrementController.getBulkNormalizedRatings);
 
 
 

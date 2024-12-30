@@ -178,6 +178,16 @@ const getHistoricalData = async(req,res)=>{
   }
 }
 
+const getBulkNormalizedRatings = async(req, res) => {
+  try {
+    const result = await incrementService.getBulkNormalizedRatings();
+    return res.status(200).json(result);
+    
+  } catch (error) {
+    return res.status(500).json({ error: error.message });    
+  }
+};
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -193,5 +203,6 @@ module.exports = {
     getIncrement,
     getWeightedIncrement,
     getIncrementByReviewCycle,
-    getHistoricalData
+    getHistoricalData,
+    getBulkNormalizedRatings
 }

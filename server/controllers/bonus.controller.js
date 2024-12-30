@@ -6,7 +6,9 @@ const {
     getBonusByIdService,
     getPickLists,
     updateBonusService,
-    uploadBonusData
+    deleteBonusService,
+    uploadBonusData,
+    calculateBonusRating
 } = require("../services/bonus.services");
 
 const fetchAllBonus = async(req,res)=>{
@@ -23,7 +25,6 @@ const fetchBonusById = async(req,res)=>{
     const {id} = req.params;
     try {
         const result = await getBonusByIdService(id);
-        console.log(result, "result")
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})
@@ -32,9 +33,8 @@ const fetchBonusById = async(req,res)=>{
 }
 
 const createBonus = async(req,res)=>{
-    const {data} = req.body;
     try {
-        const result = await createBonusService(data);
+        const result = await createBonusService(req.body);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})
@@ -43,9 +43,9 @@ const createBonus = async(req,res)=>{
 }
 
 const updateBonus = async(req,res)=>{
-    const {id, data} = req.body;
+    const {id} = req.params;
     try {
-        const result = await updateBonusService(id, data);
+        const result = await updateBonusService(id, req.body);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})
@@ -54,7 +54,13 @@ const updateBonus = async(req,res)=>{
 }
 
 const deleteBonus = async(req,res)=>{
-
+    const {id} = req.params;
+    try {
+        const result = await deleteBonusService(id);
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({message:"Internal Server Error", error: error.message})
+    }
 }
 
 const searchDropDown = async(req,res)=>{
@@ -90,6 +96,12 @@ const loadDropDown = async(req,res)=>{
 }
 
 const normalizedRating = async(req,res)=>{
+    try {
+        const normalizedRating = await calculateBonusRating(req.body);
+        return res.status(200).json(normalizedRating);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message});
+    }
 
 }
 

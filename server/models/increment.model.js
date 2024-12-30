@@ -282,6 +282,15 @@ const getHistoricalData = async (emplyeeName)=>{
         throw new Error('Error fetching historical data');
     }
 }
+
+const getAllInrementData = async ()=>{
+    try{
+        const allIncrementData = await db('increment_details').select("*");
+        return allIncrementData;
+    }catch(err){
+        throw new Error('Error fetching all increment data');
+    }
+}
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -300,5 +309,6 @@ module.exports = {
     getIncrement,
     updateNormalizedRatings,
     getIncrementDataByReviewCycle,
-    getHistoricalData
+    getHistoricalData,
+    getAllInrementData
 }

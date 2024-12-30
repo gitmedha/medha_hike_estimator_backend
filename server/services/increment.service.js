@@ -1,3 +1,4 @@
+const { all } = require('../app');
 const incrementModel =  require('../models/increment.model');
 
 const fetchIncrementData = async (offset, limit, sortBy, sortOrder) => {
@@ -146,8 +147,6 @@ const fetchIncrementDataById = async (id) => {
 
 
   const calculateAverage =(values)=>{
-    console.log("calculateAverage",values)
-    console.log("length",values.length)
     try {
     if (!values || values.length === 0) return 0;
       const sum = values.reduce((acc, value) => acc + value, 0);
@@ -207,21 +206,21 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 }
 
 function calculateStandardizedValue(value, mean, stdDev) {
-  console.log("value",value);
-  console.log("mean",mean);
-  console.log("stdDev",stdDev);
-
-  if (stdDev === 0) {
+  try{
+    if (stdDev === 0) {
       throw new Error("Standard deviation is zero, cannot standardize.");
   }
   return (value - mean) / stdDev;
+  }catch(err){
+    throw new Error("Error while calculating standardized value: "+ error.message);
+  }
+
 }
 
 const getNormalizedRating = async (data)=>{
   try {
     const ratings = data.ratings ? Number(data.ratings):0;
-    const {reviewCycle,employeeId,managerName} = data
-    
+    const {reviewCycle,employeeId,managerName} = data;
     if(ratings){
 
       //peer ratings for the same manager
@@ -235,9 +234,9 @@ const getNormalizedRating = async (data)=>{
       
       const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
       const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-
       const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
-      await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
+     
+      // await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
       return parseFloat(normalizedRating.toFixed(2));
     }
     else {
@@ -246,7 +245,7 @@ const getNormalizedRating = async (data)=>{
     
   } catch (error) {
     console.log(error)
-    throw new Error("Error while calculating normalized rating"+ error.message);
+    throw new Error("Error while calculating normalized rating "+ error.message);
   }
 }
 
@@ -286,6 +285,27 @@ const getHistoricalData = async (employeeName)=>{
     throw new Error(`Service Error: Unable to fetch historical data. ${error.message}`);
   }
 }
+
+const getBulkNormalizedRatings = async()=>{
+  try {
+    const allIncrementData = await incrementModel.getAllInrementData();
+    allIncrementData.forEach(async incrementData=>{
+      
+      let data={};
+      data.employeeId = incrementData.employee_id;
+      data.reviewCycle = incrementData.appraisal_cycle;
+      data.managerName = incrementData.manager;
+      data.ratings = incrementData.average;
+      const normalizedRating = await getNormalizedRating(data);
+
+    })
+
+    return allIncrementData;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
+  }
+
+};
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -300,5 +320,6 @@ const getHistoricalData = async (employeeName)=>{
     getNormalizedRating,
     getIncrement,
     getIncrementDataByReviewCycle,
-    getHistoricalData
+    getHistoricalData,
+    getBulkNormalizedRatings
   };

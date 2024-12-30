@@ -8,7 +8,11 @@ const {
     getBonusById,
     getBonusPickLists,
     updateBonus,
-    insertBulkData
+    insertBulkData,
+    getPeerRatings,
+    getAllRatings,
+    getHistoricalRatings,
+    deleteBonus
 } = require("../models/bonus.model");
 
 const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
@@ -68,7 +72,6 @@ const getBonusByIdService = async(id)=>{
             throw new Error("Invalid bonus id");
         }
         const bonusData = await getBonusById(id);
-        console.log("service: " + bonusData)
         return bonusData;
     } catch(error){
         console.error('Error in getBonusByIdService:', error.message);
@@ -83,7 +86,6 @@ const getPickLists = async ()=>{
 
         }
         const {IDS,Names,Managers} = await getBonusPickLists();
-        console.log(IDS,Names,Managers);
 
         pickLists.IDS = IDS.map((entity)=>({
             label: entity.employee_id,
@@ -158,7 +160,6 @@ const getPickLists = async ()=>{
         }
       }
   
-      // Insert filtered data in bulk
       for (const row of filteredDataDynamic) {
         await insertBulkData(row);
       }
@@ -168,7 +169,123 @@ const getPickLists = async ()=>{
       throw error;
     }
   };
+
+const calculateAverage =(values)=>{
+    try {
+    if (!values || values.length === 0) return 0;
+      const sum = values.reduce((acc, value) => acc + value, 0);
+      return sum / values.length;
+    } catch (error) {
+      throw new Error("Calculating average error: " + error.message);
+      
+    }
+  }
+  function calculateStandardDeviation(values) {
+    try {
+      
+    if (!values || values.length === 0) return 0;
+
+    const mean = calculateAverage(values);
+    const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+    const meanSquaredDiff = calculateAverage(squaredDiffs);
+    return Math.sqrt(meanSquaredDiff);
+    } catch (error) {
+      throw new Error("Error while calculating standard deviation"+ error.message);
+      
+    }
+}
+
+const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName)=>{
   
+  if(!STDEVP){
+    //historical data for the same manager
+    const historicalRatings = await getHistoricalRatings(managerName);
+    if(historicalRatings){
+      //combine average for all the reportees of current ratings and historical ratings
+     return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
+    }
+    else {
+
+      //average for all the employees of the current data
+     return calculateAverage([...allRatings])
+    }
+  }
+  else {
+   return calculateAverage([ratings,...peerRatings]);
+  }
+}
+
+const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+  if(!STDEVP){
+    const historicalRatings = await getHistoricalRatings(managerName);
+    if(historicalRatings){
+      return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
+    }else {
+      return calculateStandardDeviation([...allRatings])
+    }
+  }else {
+   return calculateStandardDeviation([ratings,...peerRatings]);
+  }
+
+}
+
+function calculateStandardizedValue(value, mean, stdDev) {
+  try{
+    if (stdDev === 0) {
+      throw new Error("Standard deviation is zero, cannot standardize.");
+  }
+  return (value - mean) / stdDev;
+  }catch(err){
+    throw new Error("Error while calculating standardized value: "+ error.message);
+  }
+
+}
+
+const calculateBonusRating = async (data)=>{
+    try {
+        const ratings = data.ratings ? Number(data.ratings):0;
+        const {reviewCycle,employeeId,managerName} = data;
+        if(ratings){
+    
+          //peer ratings for the same manager
+          const peerRatings = await getPeerRatings(managerName, employeeId,reviewCycle);
+    
+          //population standard deviation for the all reportees
+    
+          const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
+        
+          const allRatings = await getAllRatings();
+          
+          const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+          const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+          const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+         
+          // await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
+          return parseFloat(normalizedRating.toFixed(2));
+        }
+        else {
+          throw new Error("No ratings found for the employee");
+        }
+        
+      } catch (error) {
+        console.log(error)
+        throw new Error("Error while calculating normalized rating "+ error.message);
+      }
+}
+
+const deleteBonusService = async (id)=>{
+  try{
+    if(!id){
+        throw new Error("Invalid bonus id");
+    }
+    await deleteBonus(id);
+    return true;
+  } catch(error){
+    console.error('Error in deleteBonusService:', error.message);
+    throw error;
+  }
+ 
+}
 
 module.exports = {
     fetchAllBonusService,
@@ -178,5 +295,7 @@ module.exports = {
     getBonusByIdService,
     getPickLists,
     updateBonusService,
-    uploadBonusData
+    deleteBonusService,
+    uploadBonusData,
+    calculateBonusRating
 }

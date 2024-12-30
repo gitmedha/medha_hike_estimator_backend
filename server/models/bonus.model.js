@@ -50,11 +50,12 @@ const searchBonus = async (searchField, value, offset = 0, limit = 10) => {
 
 const createBonus = async (bonusData) => {
     try {
-        const result = (await db('bonus_details').insert(bonusData)).returning('employee_id')
+        const result = await db('bonus_details').insert(bonusData).returning('employee_id');
         return {
             data: result
         }
     } catch (error) {
+        console.log(error)
         throw new Error(`Error creating bonus data: ${error.message}`);
     }
 }
@@ -129,6 +130,59 @@ const insertBulkData = async(data)=>{
     }
 
 }
+
+const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
+    try{
+        if (!managerName) {
+            throw new Error('Manager name is required');
+        }
+        const peerRatings = await db('bonus_details')
+        .select('average').where('manager', managerName)
+        .andWhere('review_cycle',reviewCycle)
+        .andWhereNot('employee_id',employeeID);
+        const peerRatingsList = peerRatings.map(rating => parseFloat(rating.average));
+        return peerRatingsList;
+
+    }catch(err){
+
+        throw new Error('Error fetching peer ratings');
+    }
+}
+
+const getAllRatings = async ()=>{
+    try{
+        const allRatings = await db('bonus_details')
+        .select('average')
+        // .andWhere('appraisal_cycle',reviewCycle);
+        const allRatingsList = allRatings.map(rating => rating.average);
+        return allRatingsList;
+    }catch(err){
+        throw new Error('Error fetching all ratings');
+    }
+}
+
+const getHistoricalRatings = async (managerName)=>{
+    try{
+        const historicalRatings = await db('historical_data').select('final_score').where('reviewer',managerName);
+        const historicalRatingList = historicalRatings.map(historicalRating=>historicalRating.final_score);
+        return historicalRatingList;
+    }catch(err){
+        throw new Error('Error fetching historical ratings');
+    }
+}
+const updateNormalizedRating = async(rating)=>{
+
+}
+
+const deleteBonus = async (id)=>{
+    try{
+        const deletedBonus = await db('bonus_details').where('id', id).del();
+        return deletedBonus;
+    } catch(error){
+        throw new Error(error.message);
+    }
+ 
+}
 module.exports = {
     getBonus,
     getBonusDropdown,
@@ -137,5 +191,9 @@ module.exports = {
     getBonusById,
     getBonusPickLists,
     updateBonus,
-    insertBulkData
+    insertBulkData,
+    getPeerRatings,
+    getAllRatings,
+    getHistoricalRatings,
+    deleteBonus
 }
