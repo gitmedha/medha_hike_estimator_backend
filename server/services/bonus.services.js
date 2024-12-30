@@ -12,7 +12,8 @@ const {
     getPeerRatings,
     getAllRatings,
     getHistoricalRatings,
-    deleteBonus
+    deleteBonus,
+    calculateBonus
 } = require("../models/bonus.model");
 
 const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
@@ -259,8 +260,6 @@ const calculateBonusRating = async (data)=>{
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
           const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
           const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
-         
-          // await incrementModel.updateNormalizedRatings(employeeId,normalizedRating.toFixed(2),reviewCycle);
           return parseFloat(normalizedRating.toFixed(2));
         }
         else {
@@ -286,6 +285,15 @@ const deleteBonusService = async (id)=>{
   }
  
 }
+const calculateBonusPercentage = async(ratings,id,reviewCycle) => {
+  try{
+    const result = await calculateBonus(ratings,id,reviewCycle);
+    return result;
+  }catch(error){
+    console.error('Error in calculateBonusPercentage:', error.message);
+    throw error;
+  }
+}
 
 module.exports = {
     fetchAllBonusService,
@@ -297,5 +305,6 @@ module.exports = {
     updateBonusService,
     deleteBonusService,
     uploadBonusData,
-    calculateBonusRating
+    calculateBonusRating,
+    calculateBonusPercentage
 }

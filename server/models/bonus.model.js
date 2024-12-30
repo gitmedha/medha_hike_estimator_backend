@@ -144,7 +144,7 @@ const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
         return peerRatingsList;
 
     }catch(err){
-
+        console.log(err);
         throw new Error('Error fetching peer ratings');
     }
 }
@@ -170,9 +170,6 @@ const getHistoricalRatings = async (managerName)=>{
         throw new Error('Error fetching historical ratings');
     }
 }
-const updateNormalizedRating = async(rating)=>{
-
-}
 
 const deleteBonus = async (id)=>{
     try{
@@ -182,6 +179,41 @@ const deleteBonus = async (id)=>{
         throw new Error(error.message);
     }
  
+}
+
+const updateNormalizedRating = async(id,reviewCycle,ratings) => {
+    try {
+        const updatedRatings = await db('bonus_details').update({ normalized_ratings: parseFloat(ratings.toFixed(1))})
+        .where('employee_id',id)
+        .andWhere('review_cycle', reviewCycle)
+        .returning('employee_id');
+        return updatedRatings;
+    } catch (error) {
+        throw new Error(`Error updating normalized ratings: ${error.message}`);
+    }
+}
+
+const calculateBonus = async (normalizedRating,id,reviewCycle)=>{
+    try { 
+      const result = await db('bonus_measurements')
+      .select('ratings', 'bonus')
+      .where('ratings', '>=', normalizedRating)
+      .orderBy('ratings', 'asc')
+      .first(); 
+
+    if (result) {
+      await db('bonus_details')
+      .where('employee_id', id)
+      .andWhere('review_cycle', reviewCycle)
+      .update('bonus', result.bonus);
+      return result.bonus;
+    }
+
+    return null;
+        
+    } catch (error) {
+        throw new Error("Error Fetching bonus: " + error.message);
+    }
 }
 module.exports = {
     getBonus,
@@ -195,5 +227,7 @@ module.exports = {
     getPeerRatings,
     getAllRatings,
     getHistoricalRatings,
-    deleteBonus
+    deleteBonus,
+    updateNormalizedRating,
+    calculateBonus
 }

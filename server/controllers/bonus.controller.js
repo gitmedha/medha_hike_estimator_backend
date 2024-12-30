@@ -8,8 +8,11 @@ const {
     updateBonusService,
     deleteBonusService,
     uploadBonusData,
-    calculateBonusRating
+    calculateBonusRating,
+    calculateBonusPercentage
 } = require("../services/bonus.services");
+
+const {updateNormalizedRating} = require("../models/bonus.model");
 
 const fetchAllBonus = async(req,res)=>{
     try {
@@ -98,6 +101,7 @@ const loadDropDown = async(req,res)=>{
 const normalizedRating = async(req,res)=>{
     try {
         const normalizedRating = await calculateBonusRating(req.body);
+        await updateNormalizedRating(req.body.employeeId, req.body.reviewCycle,normalizedRating);
         return res.status(200).json(normalizedRating);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message});
@@ -106,7 +110,17 @@ const normalizedRating = async(req,res)=>{
 }
 
 const calculateBonus = async(req,res)=>{
+    try {
+        const { normalizedRating ,employeeId,reviewCycle} = req.body;
+        const result = await calculateBonusPercentage(normalizedRating,employeeId,reviewCycle);
 
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Bonus not found' });
+          }
+          return res.status(200).json({ message:"Bonus calculated successfully", data: `${result}%` });        
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
 };
 
 const uploadBonusFile = async(req,res)=>{
