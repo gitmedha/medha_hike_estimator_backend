@@ -168,6 +168,7 @@ const getPickLists = async ()=>{
     }
 
   } catch (error) {
+    console.log("error",error)
     console.error('Error in uploadBonusData:', error.message);
     throw error;
   }
