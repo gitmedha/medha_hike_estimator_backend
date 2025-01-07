@@ -14,7 +14,8 @@ const {
     loadDropDown,
     normalizedRating,
     calculateBonus,
-    uploadBonusFile
+    uploadBonusFile,
+    bulkRating
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -58,6 +59,10 @@ router.post('/calculate_bonus',calculateBonus);
 // Upload bonus excel data
 
 router.post('/upload_bonus_data', upload.single('file'),uploadBonusFile);
+
+// Bulk Rating
+
+router.get('/calculate_bulk_normalized_rating',bulkRating);
 
 
 module.exports = router;

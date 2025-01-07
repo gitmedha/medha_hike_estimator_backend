@@ -9,7 +9,8 @@ const {
     deleteBonusService,
     uploadBonusData,
     calculateBonusRating,
-    calculateBonusPercentage
+    calculateBonusPercentage,
+    BulkBonusRating
 } = require("../services/bonus.services");
 
 const {updateNormalizedRating} = require("../models/bonus.model");
@@ -136,6 +137,15 @@ const uploadBonusFile = async(req,res)=>{
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 }
+
+const bulkRating = async(req,res)=>{
+    try {
+        const result = await BulkBonusRating();
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
  
 module.exports ={
     fetchAllBonus,
@@ -148,5 +158,7 @@ module.exports ={
     loadDropDown,
     normalizedRating,
     calculateBonus,
-    uploadBonusFile
+    uploadBonusFile,
+    calculateBonusRating,
+    bulkRating
 }

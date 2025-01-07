@@ -302,7 +302,6 @@ module.exports = {
     getSearchDropdowns,
     getPickList,
     fetchFilterDropdown,
-    // getEmployeeRating,
     getPeerRatings,
     getHistoricalRatings,
     getAllRatings,

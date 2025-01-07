@@ -110,7 +110,7 @@ const updateBonus = async (id,updateData)=>{
     }
 }
 
-const insertBulkData = async(data)=>{
+const insertBulkData = async(data,review_cycle)=>{
     try{
         if(Object.keys(data).length === 6){
             await db('bonus_details').insert({
@@ -119,7 +119,7 @@ const insertBulkData = async(data)=>{
                 kra: parseFloat(parseFloat(data.kra).toFixed(1)),
                 compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
                 average: parseFloat(parseFloat(data.average).toFixed(1)),
-                review_cycle: 'April-Sep 2022',
+                review_cycle: review_cycle,
                 manager: data.manager,
             });
         }
@@ -183,7 +183,7 @@ const deleteBonus = async (id)=>{
 
 const updateNormalizedRating = async(id,reviewCycle,ratings) => {
     try {
-        const updatedRatings = await db('bonus_details').update({ normalized_ratings: parseFloat(ratings.toFixed(1))})
+        const updatedRatings = await db('bonus_details').update({ normalized_ratings: ratings})
         .where('employee_id',id)
         .andWhere('review_cycle', reviewCycle)
         .returning('employee_id');
@@ -215,6 +215,16 @@ const calculateBonus = async (normalizedRating,id,reviewCycle)=>{
         throw new Error("Error Fetching bonus: " + error.message);
     }
 }
+
+
+const getAllData = async ()=>{
+    try{
+        const allData = await db('bonus_details').select("*");
+        return allData;
+    }catch(err){
+        throw new Error('Error fetching all increment data');
+    }
+}
 module.exports = {
     getBonus,
     getBonusDropdown,
@@ -229,5 +239,6 @@ module.exports = {
     getHistoricalRatings,
     deleteBonus,
     updateNormalizedRating,
-    calculateBonus
+    calculateBonus,
+    getAllData
 }

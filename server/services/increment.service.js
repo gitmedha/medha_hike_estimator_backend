@@ -297,6 +297,8 @@ const getBulkNormalizedRatings = async()=>{
       data.managerName = incrementData.manager;
       data.ratings = incrementData.average;
       const normalizedRating = await getNormalizedRating(data);
+      await incrementModel.updateNormalizedRatings(incrementData.employee_id,normalizedRating,incrementData.appraisal_cycle);
+
 
     })
 

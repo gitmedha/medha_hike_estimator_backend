@@ -13,7 +13,9 @@ const {
     getAllRatings,
     getHistoricalRatings,
     deleteBonus,
-    calculateBonus
+    calculateBonus,
+    getAllData,
+    updateNormalizedRating
 } = require("../models/bonus.model");
 
 const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
@@ -123,53 +125,53 @@ const getPickLists = async ()=>{
 
 
  const uploadBonusData = async (req) => {
-    try {
-      const filePath = req.file.path;
-      const workbook = xlsx.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const data = xlsx.utils.sheet_to_json(worksheet);
-  
-      const requiredFields = {
-        id: '__EMPTY',
-        name: '__EMPTY_1',
-        kra: 'Apr - Mar 2023',
-        competency: '__EMPTY_2',
-        average: '__EMPTY_3',
-        manager: '__EMPTY_4',
-      };
-  
-      const filteredDataDynamic = [];
-      for (const row of data.slice(1)) {
-        const result = {};
-        let isValid = true;
-  
-        for (const [key, value] of Object.entries(requiredFields)) {
-          result[key] = row[value];
-  
-          if (!result[key]) {
-            isValid = false;
-          }
-        }
-  
-        if (isValid) {
-          filteredDataDynamic.push(result);
-        }
-  
-        if (result.id === "M0135") {
-          break;
+  try {
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    const requiredFields = {
+      id: '__EMPTY',
+      name: '__EMPTY_1',
+      kra: 'Apr - Mar 2023',
+      competency: '__EMPTY_2',
+      average: '__EMPTY_3',
+      manager: '__EMPTY_4',
+    };
+
+    const filteredDataDynamic = [];
+    for (const row of data.slice(1)) {
+      const result = {};
+      let isValid = true;
+
+      for (const [key, value] of Object.entries(requiredFields)) {
+        result[key] = row[value];
+
+        if (!result[key]) {
+          isValid = false;
         }
       }
-  
-      for (const row of filteredDataDynamic) {
-        await insertBulkData(row);
+
+      if (isValid) {
+        filteredDataDynamic.push(result);
       }
-  
-    } catch (error) {
-      console.error('Error in uploadBonusData:', error.message);
-      throw error;
+
+      if (result.id === "M0135") {
+        break;
+      }
     }
-  };
+
+    for (const row of filteredDataDynamic) {
+      await insertBulkData(row,'Apr-Mar 2023');
+    }
+
+  } catch (error) {
+    console.error('Error in uploadBonusData:', error.message);
+    throw error;
+  }
+};
 
 const calculateAverage =(values)=>{
     try {
@@ -295,6 +297,27 @@ const calculateBonusPercentage = async(ratings,id,reviewCycle) => {
   }
 }
 
+
+const BulkBonusRating = async()=>{
+  try {
+    const allData = await getAllData();
+    allData.forEach(async bonusData=>{
+      
+      let data={};
+      data.employeeId = bonusData.employee_id;
+      data.reviewCycle = bonusData.review_cycle;
+      data.managerName = bonusData.manager;
+      data.ratings = bonusData.average;
+      const normalizedRating = await calculateBonusRating(data);
+      await updateNormalizedRating(bonusData.employee_id,bonusData.review_cycle,normalizedRating);
+    })
+
+    return allData;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
+  }
+
+};
 module.exports = {
     fetchAllBonusService,
     searchDropDownService,
@@ -306,5 +329,6 @@ module.exports = {
     deleteBonusService,
     uploadBonusData,
     calculateBonusRating,
-    calculateBonusPercentage
+    calculateBonusPercentage,
+    BulkBonusRating
 }
