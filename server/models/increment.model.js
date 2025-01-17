@@ -18,12 +18,17 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
     }
 }
 
-const getIncrementDataById = async (id) => {
+const getIncrementDataById = async (id,review_cycle) => {
     try {
-        
         const ifExists = (await db('increment_details').select('*').where('employee_id',id)).length && (await db('employee_details').select('*').where('employee_id',id)).length;
         if(!ifExists) throw new Error('Employee not found');
-        
+    
+    const weightedIncrementCheck = await db('increment_details').select('weighted_increment').where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
+    if(!weightedIncrementCheck.length){   
+        const weightedIncrement = await getWeightedIncrement(id,review_cycle);
+        await db('increment_details').update({weighted_increment:weightedIncrement}).where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
+    }
+
       const incrementData = await db('increment_details')
         .select(
           'increment_details.*',
@@ -36,8 +41,8 @@ const getIncrementDataById = async (id) => {
           'increment_details.employee_id',
           'employee_details.employee_id'
         )
-        .where('increment_details.employee_id', id);
-        console.log("incrementData",incrementData)
+        .where('increment_details.employee_id', id)
+        .andWhere('increment_details.appraisal_cycle',review_cycle);
   
       return incrementData;
     } catch (err) {
@@ -223,8 +228,6 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .orderBy('increment_range', 'asc')
         .first(); 
 
-        
-  
       if (result) {
         await db('increment_details')
         .where('employee_id', employeeId)
@@ -254,10 +257,42 @@ const updateNormalizedRatings = async (employeeID,rating,reviewCycle) =>{
     }
 }
 
-const getWeightedIncrement = async (employee_id,biAnnualIncrement,annualIncrement)=>{
+function findLesserYearData(records, currentAppraisalCycle) {
     try{
-        const weightedIncrement = await db('increment_details').select('bi_annual_increment', 'annualIncrement').where('employee_id', employee_id);
-        return weightedIncrement;
+        
+    const currentYear = parseInt(currentAppraisalCycle.split(' ')[1]);
+    for (const record of records) {
+      const year = parseInt(record.appraisal_cycle.split(' ')[1]);
+    
+      if (year < currentYear) {
+        return record;
+      }
+    }
+  
+    return null;
+
+    }catch(e){
+        console.log(e);
+        throw new Error('Error finding lesser year data');
+    }
+  }
+
+  
+const getWeightedIncrement = async (employee_id,review_cycle)=>{
+    try{
+        const records = await db('increment_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(appraisal_cycle, ' ', 2) AS INT) DESC")
+        const currentRecord = await records.find(record => record.appraisal_cycle === review_cycle);
+        const pastIncrement = await findLesserYearData(records,currentRecord.appraisal_cycle);
+        if(!pastIncrement) return currentRecord.increment;
+        else if (!pastIncrement.increment) return currentRecord.increment;
+
+        const currentIncrement = parseFloat(currentRecord.increment);
+        const pastIncrementValue = parseFloat(pastIncrement.increment);
+
+        // Calculate weighted increment
+        const weightedIncrement = (pastIncrementValue * 0.33334) + (currentIncrement * 0.66667);
+        return weightedIncrement.toFixed(2);
+
     }catch(err){
         throw new Error('Error fetching weighted increment');
     }
@@ -291,6 +326,7 @@ const getAllInrementData = async ()=>{
         throw new Error('Error fetching all increment data');
     }
 }
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,

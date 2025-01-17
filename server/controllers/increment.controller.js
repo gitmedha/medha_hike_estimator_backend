@@ -14,9 +14,9 @@ const getIncrementData = async (req, res) => {
   };
 
   const getIncrementDataById = async (req, res) => {
-    const { id } = req.params;
+    const { id,review_cycle} = req.params;
     try {
-      const result = await incrementService.fetchIncrementDataById(id);
+      const result = await incrementService.fetchIncrementDataById(id,decodeURIComponent(review_cycle));
       if (result.length === 0) {
         return res.status(404).json({ message: 'Increment data not found' });
       }

@@ -11,9 +11,9 @@ const fetchIncrementData = async (offset, limit, sortBy, sortOrder) => {
 };
 
 
-const fetchIncrementDataById = async (id) => {
+const fetchIncrementDataById = async (id,review_cycle) => {
     try {
-      const result = await incrementModel.getIncrementDataById(id);
+      const result = await incrementModel.getIncrementDataById(id,review_cycle);
       if (!result || result.length === 0) {
         throw new Error(`No increment data found for ID: ${id}`);
       }

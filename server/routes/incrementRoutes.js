@@ -6,7 +6,7 @@ const incrementController = require('../controllers/increment.controller');
 router.get('/get-increment-data/:limit/:offset/:sortBy/:sortOrder', incrementController.getIncrementData);
 
 // Route to fetch increment data by ID
-router.get('/get-increment-data/:id', incrementController.getIncrementDataById);
+router.get('/get-increment-data/:id/:review_cycle', incrementController.getIncrementDataById);
 
 // Route to create new increment data
 router.post('/create-increment-data', incrementController.createIncrementData);
