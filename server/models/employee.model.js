@@ -22,7 +22,8 @@ const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
       'employee_status',
       'employee_type',
       'id'
-    ).orderBy(sortBy,sortOrder)
+    )
+    .orderBy(sortBy,sortOrder)
     .limit(limit)
     .offset(offset);
 
@@ -188,7 +189,7 @@ const deleteEmployeeQuery = async (id) => {
   try {
       const [deletedEmployee] = await db('employee_details')
           .where({ id })
-          .del(['*']);
+          .update({ employee_status: 'Inactive' }, ['*']);
 
       return deletedEmployee || null;
   } catch (error) {
