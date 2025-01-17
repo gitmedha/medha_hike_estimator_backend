@@ -5,17 +5,26 @@ const db = require('../config/db');
  * @returns {object} - The user data
  */
 const LoginUser = async (username) => {
-  const user = await db('user_table')
+  try {
+    const user = await db('user_table')
     .select(
       'username',
       'password',
       'id',
-      'designation'
+      'designation',
     ).where('username', username);
+
+    console.log(user,"user")
 
   return {
     data: user,
   };
+    
+  } catch (error) {
+    console.error(error);
+    
+  }
+ 
 };
 
 /**
@@ -25,13 +34,15 @@ const LoginUser = async (username) => {
  * @returns {object} - The user data
  */
 
-const RegisterUser = async (username, password) => {
+const RegisterUser = async (username, password,name) => {
     try {
         const user = await db('user_table')
            .insert({
-                username,
-                password
+                "username":username,
+                "password":password,
+                "name":name
             })
+            .returning(['username', 'name', 'id', 'designation', 'isadmin']);
         return {
             data: user,
         };
@@ -44,4 +55,5 @@ const RegisterUser = async (username, password) => {
 
 module.exports = {
     LoginUser,
+    RegisterUser
 };
