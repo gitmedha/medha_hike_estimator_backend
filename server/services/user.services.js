@@ -44,9 +44,9 @@ const comparePassword = async (user,password) => {
  * @returns {object} - The registered user details
  * */
 
-const RegisterUser = async (username, password) => {
+const RegisterUser = async (username, password,name) => {
   const hashedPassword = await HashPassword(password);
-  const result = await userModel.RegisterUser(username, hashedPassword);
+  const result = await userModel.RegisterUser(username, hashedPassword,name);
   return {
     data: result.data
   };
@@ -63,11 +63,14 @@ const generateToken = async (user) => {
         expiresIn: '6h',
       });
       return token;
-}
+};
+
+
 
 module.exports = {
     LoginUser,
     HashPassword,
     generateToken,
-    comparePassword
+    comparePassword,
+    RegisterUser
 };
