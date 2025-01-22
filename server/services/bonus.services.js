@@ -1,4 +1,5 @@
 const xlsx = require('xlsx');
+const db = require('../config/db')
 
 const {
     getBonus,
@@ -319,6 +320,25 @@ const BulkBonusRating = async()=>{
   }
 
 };
+
+const BulkBonus = async()=>{
+  try {
+    const allData = await getAllData();
+    allData.forEach(async bonusData=>{
+      if(bonusData.normalized_ratings && !bonusData.bonus ){
+      const bonus = await calculateBonusPercentage(bonusData.normalized_ratings,bonusData.employee_id,bonusData.review_cycle);
+      await db('bonus_details').update({ bonus: bonus}).where('id',bonusData.id);
+      }
+    })
+
+    return allData;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
+  }
+
+}
+
+
 module.exports = {
     fetchAllBonusService,
     searchDropDownService,
@@ -331,5 +351,6 @@ module.exports = {
     uploadBonusData,
     calculateBonusRating,
     calculateBonusPercentage,
-    BulkBonusRating
+    BulkBonusRating,
+    BulkBonus
 }

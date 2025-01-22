@@ -1,4 +1,5 @@
 const employeeService = require('../services/employee.services');
+const { downloadExcel} = require('../utils/downloadExcel');
 
 /**
  * @param {object} req
@@ -155,6 +156,24 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+const downloadExcelFile = async (req,res)=>{
+  try {
+    await downloadExcel(req,res,'employee_details');
+  } catch (error) {
+    res.status(500).json({error: 'Error downloading excel file', details: error.message});
+  }
+}
+
+const uploadExcelFile = async(req,res)=>{
+  try {
+    await employeeService.uploadExcelFile(req);
+    res.status(200).json({message: 'Excel file uploaded successfully'});
+  } catch (error) {
+    res.status(500).json({error: 'Error uploading excel file', details: error.message});
+  }
+}
+
+
 module.exports = {
   createEmployee,
   getEmployees,
@@ -164,5 +183,7 @@ module.exports = {
   getEmployeeHistoricDetails,
   getEmployeeDropDowns,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
+  downloadExcelFile,
+  uploadExcelFile
 };

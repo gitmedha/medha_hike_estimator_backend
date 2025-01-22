@@ -1,5 +1,8 @@
 const employeeModel = require('../models/employee.model');
 const moment = require('moment');
+const xlsx = require('xlsx');
+const db = require('../config/db');
+
 
 /**
  * Get paginated employee details
@@ -122,6 +125,40 @@ const deleteEmployeeService = async (id) => {
   }
 };
 
+const uploadExcelFile = async (req) => {
+  try {
+
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[1];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    const transformedData = data.map((row) => ({
+      employee_id: row["Employee ID"],
+      first_name: row["First Name"],
+      last_name: row["Last Name"],
+      email_id: row["Email ID"],
+      department: row["Department"],
+      title: row["Title"],
+      date_of_joining: new Date((row["Date of joining"] - 25569) * 86400 * 1000), // Excel date to JS date
+      employee_status: row["Employee Status"],
+      employee_type: row["Employee Type"],
+      experience: row["Experience"],
+      current_band: row["Current Band"],
+      gross_monthly_salary_or_fee_rs: row["Gross Monthly Salary/ Fee (Rs.)"]
+    }));
+
+    await db("employee_details").insert(transformedData);
+    console.log("Data inserted successfully");
+
+    return { message: "Data uploaded and inserted successfully!" };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error while uploading Excel file: " + err.message);
+  }
+};
+
 module.exports = {
   getEmployeesService,
   getEmployeeByID,
@@ -132,5 +169,6 @@ module.exports = {
   createEmployee,
   updateEmployeeService,
   deleteEmployeeService,
-  checkIfExists
+  checkIfExists,
+  uploadExcelFile
 };

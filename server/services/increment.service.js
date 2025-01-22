@@ -1,5 +1,6 @@
-const { all } = require('../app');
 const incrementModel =  require('../models/increment.model');
+const db = require('../config/db');
+const xlsx = require('xlsx');
 
 const fetchIncrementData = async (offset, limit, sortBy, sortOrder) => {
     try {
@@ -254,6 +255,7 @@ const getIncrement = async(normalizedRating,employeeId,reviewCycle)=>{
     const result = await incrementModel.getIncrement(normalizedRating,employeeId,reviewCycle);
     return result;
   } catch (error) {
+    console.log(error, "error")
     throw new Error(`Service Error: Unable to fetch increment data. ${error.message}`);
   }
 }
@@ -308,6 +310,56 @@ const getBulkNormalizedRatings = async()=>{
   }
 
 };
+
+const getBulkIncrement = async ()=>{
+  try {
+    const allIncrementData = await incrementModel.getAllInrementData();
+    allIncrementData.forEach(async incrementData=>{
+    if(incrementData.normalize_rating && !incrementData.increment){
+      const increment = await getIncrement(incrementData.normalize_rating,incrementData.employee_id,incrementData.appraisal_cycle);
+      await db("increment_details").update({increment}).where({id:incrementData.id});
+    }
+    })
+    return allIncrementData;
+  } catch (error) {
+    console.log("error",error)
+    throw new Error(`Service Error: Unable to fetch bulk increment data. ${error.message}`);
+  }
+}
+
+const uploadExcelFile = async (req) => {
+  try {
+
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+  const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    const transformedData = data.map((row) => ({
+      employee_id: row["Employee ID"],
+      first_name: row["First Name"],
+      last_name: row["Last Name"],
+      email_id: row["Email ID"],
+      department: row["Department"],
+      title: row["Title"],
+      date_of_joining: new Date((row["Date of joining"] - 25569) * 86400 * 1000), // Excel date to JS date
+      employee_status: row["Employee Status"],
+      employee_type: row["Employee Type"],
+      experience: row["Experience"],
+      current_band: row["Current Band"],
+      gross_monthly_salary_or_fee_rs: row["Gross Monthly Salary/ Fee (Rs.)"]
+    }));
+
+    await db("increment_details").insert(transformedData);
+    console.log("Data inserted successfully");
+
+    return { message: "Data uploaded and inserted successfully!" };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error while uploading Excel file: " + err.message);
+  }
+};
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -323,5 +375,7 @@ const getBulkNormalizedRatings = async()=>{
     getIncrement,
     getIncrementDataByReviewCycle,
     getHistoricalData,
-    getBulkNormalizedRatings
+    getBulkNormalizedRatings,
+    getBulkIncrement,
+    uploadExcelFile
   };

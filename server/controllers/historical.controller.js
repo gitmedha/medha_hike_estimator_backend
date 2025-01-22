@@ -1,4 +1,6 @@
 const HistoricalService = require('../services/historical.services');
+const { downloadExcel} = require('../utils/downloadExcel');
+
 
 /**
  * @param {object} req
@@ -143,9 +145,28 @@ const deleteHistoric = async (req, res) => {
       });
   } catch (error) {
       console.error("Error deleting historic:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
+const downloadExcelFile = async (req,res)=>{
+  try {
+    await downloadExcel(req,res,'historical_data');
+  } catch (error) {
+    res.status(500).json({error: 'Error downloading excel file', details: error.message});
+  }
+}
+
+const uploadExcelFile = async(req,res)=>{
+  try {
+    await HistoricalService.uploadExcelFile(req);
+    res.status(200).json({message: 'Excel file uploaded successfully'});
+  } catch (error) {
+    res.status(500).json({error: 'Error uploading excel file', details: error.message});
+  }
+}
+
 
 module.exports = {
     getHistoricalData,
@@ -156,5 +177,7 @@ module.exports = {
     getReporteeDetails,
     deleteHistoric,
     updateHistoric,
-    createHistoric
+    createHistoric,
+    downloadExcelFile,
+    uploadExcelFile
 };

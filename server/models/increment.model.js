@@ -221,6 +221,7 @@ const getAllRatings = async ()=>{
 }
 
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
+    console.log(normalizedRating)
     try {
       const result = await db('increment_measurements')
         .select('increment_range', 'increment_percentage')

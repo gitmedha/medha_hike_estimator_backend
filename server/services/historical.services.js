@@ -1,4 +1,6 @@
 const historicalModel = require('../models/historical.model');
+const db = require('../config/db');
+const xlsx = require('xlsx');
 
 /**
  * Get Historical employee details
@@ -105,6 +107,68 @@ const deleteHistoricService = async (id) => {
   }
 };
 
+const uploadExcelFile = async (req) => {
+  try {
+
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[2];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+const transformedData = [];
+let currentGroup = null;
+
+data.forEach((row) => {
+  if (row.__EMPTY && row.__EMPTY.includes('-')) {
+    // Handle date range row
+    if (currentGroup) {
+      transformedData.push(currentGroup);
+    }
+    const [start, end] = row.__EMPTY.split('-').map((item) => item.trim());
+    currentGroup = {
+      start_month: start,
+      end_month: end,
+      data: []
+    };
+  } else if (currentGroup && row.__EMPTY_1) {
+    // Handle data row
+    currentGroup.data.push({
+      employee: row.__EMPTY,
+      reviewer: row.__EMPTY_1,
+      kra_vs_goals: row.__EMPTY_2,
+      competency: row.__EMPTY_3,
+      final_score: row.__EMPTY_4
+    });
+  }
+});
+
+// Add the last group
+if (currentGroup) {
+  transformedData.push(currentGroup);
+}
+
+for (const group of transformedData) {
+  for (const entry of group.data) {
+    await db("historical_data").insert({
+      start_month: group.start_month,
+      ending_month: group.end_month,
+      employee: entry.employee,
+      reviewer: entry.reviewer,
+      kra_vs_goals: parseFloat(entry.__EMPTY_2) ,
+      competency: parseFloat(entry.__EMPTY_3) , 
+      final_score: parseFloat(entry.__EMPTY_4)
+    });
+  }
+}
+    console.log("Data inserted successfully");
+
+    return { message: "Data uploaded and inserted successfully!" };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error while uploading Excel file: " + err.message);
+  }
+};
+
 module.exports = {
     getHistoricalDataService,
     getHistoricDatabyID,
@@ -114,5 +178,6 @@ module.exports = {
     getReporteeDetails,
     createHistoric,
     updateHistoricService,
-    deleteHistoricService
+    deleteHistoricService,
+    uploadExcelFile
 };

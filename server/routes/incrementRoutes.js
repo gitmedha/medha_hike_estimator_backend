@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const incrementController = require('../controllers/increment.controller');
+const upload = require('../middlewares/multer');
+
 
 // Route to fetch paginated and sorted increment data
 router.get('/get-increment-data/:limit/:offset/:sortBy/:sortOrder', incrementController.getIncrementData);
@@ -41,6 +43,13 @@ router.post('/get_increment_by_review_cycle', incrementController.getIncrementBy
 router.post('/get_historical_data_increment', incrementController.getHistoricalData);
 
 router.get('/calculate_bulk_normalized_rating',incrementController.getBulkNormalizedRatings);
+
+router.get('/calculate_bulk_increment',incrementController.getBulkIncrement);
+
+router.get('/download_excel', incrementController.downloadExcelFile);
+
+router.post('/upload_excel', upload.single('file'), incrementController.uploadExcelFile);
+
 
 
 

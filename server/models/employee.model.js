@@ -197,6 +197,31 @@ const deleteEmployeeQuery = async (id) => {
   }
 };
 
+const uploadBulkData = async (employeeData)=>{
+  try {
+    const [newEmployee] = await db('employee_details')
+      .insert({
+        first_name: employeeData.first_name,
+        last_name: employeeData.last_name,
+        email_id: employeeData.email_id,
+        department: employeeData.department,
+        title: employeeData.title,
+        date_of_joining: employeeData.date_of_joining,
+        employee_status: employeeData.employee_status,
+        employee_type: employeeData.employee_type,
+        current_band: employeeData.current_band,
+        employee_id: employeeData.employee_id,
+        experience: employeeData.experience
+      })
+      .returning('*');  
+
+    console.log(newEmployee);
+    return newEmployee;
+  } catch (e) {
+    throw new Error(e.message);
+  }
+}
+
 module.exports = {
   getEmployeesQuery,
   getEmployeebyID,

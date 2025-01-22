@@ -10,10 +10,13 @@ const {
     uploadBonusData,
     calculateBonusRating,
     calculateBonusPercentage,
-    BulkBonusRating
+    BulkBonusRating,
+    BulkBonus
 } = require("../services/bonus.services");
 
 const {updateNormalizedRating} = require("../models/bonus.model");
+const { downloadExcel} = require('../utils/downloadExcel');
+
 
 const fetchAllBonus = async(req,res)=>{
     try {
@@ -146,6 +149,23 @@ const bulkRating = async(req,res)=>{
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 }
+
+const calculateBulkBonus = async(req,res) => {
+    try {
+        const result = await BulkBonus();
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+const downloadPgToXl = async (req,res)=>{
+    try {
+      await downloadExcel(req,res,'bonus_details');
+    } catch (error) {
+      res.status(500).json({error: 'Error downloading excel file', details: error.message});
+    }
+  }
  
 module.exports ={
     fetchAllBonus,
@@ -160,5 +180,8 @@ module.exports ={
     calculateBonus,
     uploadBonusFile,
     calculateBonusRating,
-    bulkRating
+    bulkRating,
+    calculateBulkBonus,
+    calculateBulkBonus,
+    downloadPgToXl
 }

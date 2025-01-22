@@ -1,5 +1,7 @@
 const incrementService = require('../services/increment.service');
 const incrementModel = require('../models/increment.model');
+const { downloadExcel} = require('../utils/downloadExcel');
+
 
 
 const getIncrementData = async (req, res) => {
@@ -189,6 +191,34 @@ const getBulkNormalizedRatings = async(req, res) => {
   }
 };
 
+const getBulkIncrement = async (req,res)=>{
+  try {
+    const result = await incrementService.getBulkIncrement();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching bulk increment:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+const downloadExcelFile = async (req,res)=>{
+  try {
+    await downloadExcel(req,res,'increment_details');
+  } catch (error) {
+    res.status(500).json({error: 'Error downloading excel file', details: error.message});
+  }
+}
+
+const uploadExcelFile = async(req,res)=>{
+  try {
+    await incrementService.uploadExcelFile(req);
+    res.status(200).json({message: 'Excel file uploaded successfully'});
+  } catch (error) {
+    res.status(500).json({error: 'Error uploading excel file', details: error.message});
+  }
+}
+
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -205,5 +235,8 @@ module.exports = {
     getWeightedIncrement,
     getIncrementByReviewCycle,
     getHistoricalData,
-    getBulkNormalizedRatings
+    getBulkNormalizedRatings,
+    getBulkIncrement,
+    uploadExcelFile,
+    downloadExcelFile
 }
