@@ -332,26 +332,46 @@ const uploadExcelFile = async (req) => {
 
     const filePath = req.file.path;
     const workbook = xlsx.readFile(filePath);
-  const sheetName = workbook.SheetNames[0];
+    const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const transformedData = data.map((row) => ({
-      employee_id: row["Employee ID"],
-      first_name: row["First Name"],
-      last_name: row["Last Name"],
-      email_id: row["Email ID"],
-      department: row["Department"],
-      title: row["Title"],
-      date_of_joining: new Date((row["Date of joining"] - 25569) * 86400 * 1000), // Excel date to JS date
-      employee_status: row["Employee Status"],
-      employee_type: row["Employee Type"],
-      experience: row["Experience"],
-      current_band: row["Current Band"],
-      gross_monthly_salary_or_fee_rs: row["Gross Monthly Salary/ Fee (Rs.)"]
-    }));
+    const requiredFields = {
+      employee_id: '__EMPTY',
+      full_name: '__EMPTY_1',
+      kra_vs_goals: 'Apr - Sept 2022',
+      compentency: '__EMPTY_2',
+      average: '__EMPTY_3',
+      manager: '__EMPTY_4',
+    };
+const filteredDataDynamic = [];
+    for (const row of data.slice(1)) {
+      const result = {};
+      let isValid = true;
 
-    await db("increment_details").insert(transformedData);
+      for (const [key, value] of Object.entries(requiredFields)) {
+        result[key] = row[value];
+
+        if (!result[key]) {
+          isValid = false;
+        }
+      }
+
+      if (isValid) {
+        filteredDataDynamic.push(result);
+      }
+
+      if (result.id === "M0135") {
+        break;
+      }
+    }
+
+    for (const row of filteredDataDynamic) {
+      row.appraisal_cycle = "April-Sept 2022";
+      await db("increment_details").insert(row);
+    }
+
+
     console.log("Data inserted successfully");
 
     return { message: "Data uploaded and inserted successfully!" };

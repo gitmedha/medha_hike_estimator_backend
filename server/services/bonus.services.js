@@ -159,7 +159,7 @@ const getPickLists = async ()=>{
         filteredDataDynamic.push(result);
       }
 
-      if (result.id === "M0135") {
+      if (result.id === "M0333") {
         break;
       }
     }
