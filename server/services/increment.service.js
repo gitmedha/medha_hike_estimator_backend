@@ -350,9 +350,6 @@ const uploadExcelFile = async (req) => {
 
     await db('increment_details').insert(dataObj);
     }
-
-    console.log("Data inserted successfully");
-
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {
     console.error(err);
