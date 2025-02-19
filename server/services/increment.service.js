@@ -336,44 +336,20 @@ const uploadExcelFile = async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const requiredFields = {
-      employee_id: '__EMPTY',
-      full_name: '__EMPTY_1',
-      kra_vs_goals: 'Apr - Sept 2022',
-      compentency: '__EMPTY_2',
-      average: '__EMPTY_3',
-      manager: '__EMPTY_4',
-    };
-const filteredDataDynamic = [];
-    for (const row of data.slice(1)) {
-      const result = {};
-      let isValid = true;
+    for (let row of data){
+    const dataObj = {}
+    let employeeInfo = row.Employee.split(" ");
+    let managerInfo = row.Reviewer.split(" ");
+    dataObj.employee_id = `${employeeInfo[0]}`;
+    dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.average = parseFloat(row['Final Score']);
+    dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
+    dataObj.compentency = parseFloat(row.Competency);
+    dataObj.appraisal_cycle = row['Appraisal Cycle'] ? row['Appraisal Cycle'] : "April-Sep 2024";
 
-      for (const [key, value] of Object.entries(requiredFields)) {
-        result[key] = row[value];
-
-        if (!result[key]) {
-          isValid = false;
-        }
-      }
-
-      if (isValid) {
-        filteredDataDynamic.push(result);
-      }
-
-      if (result.id === "M0135") {
-        break;
-      }
+    await db('increment_details').insert(dataObj);
     }
-
-    for (const row of filteredDataDynamic) {
-      row.appraisal_cycle = "April-Sept 2022";
-      await db("increment_details").insert(row);
-    }
-
-
-    console.log("Data inserted successfully");
-
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {
     console.error(err);

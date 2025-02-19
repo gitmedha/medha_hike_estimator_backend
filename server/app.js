@@ -28,12 +28,14 @@ const historicalRoutes = require('./routes/historicalRoutes');
 const userRoutes = require('./routes/userRoutes');
 const incrementalRoutes = require('./routes/incrementRoutes');
 const bonuses = require('./routes/bonusRoute')
+const zohoRoutes = require('./routes/zohoRoutes');
 
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/historical_data',historicalRoutes);
 app.use('/api/increments',incrementalRoutes);
-app.use('/api/bonuses',bonuses)
+app.use('/api/bonuses',bonuses);
+app.use('/auth/zoho',zohoRoutes);
 
 module.exports = app;
