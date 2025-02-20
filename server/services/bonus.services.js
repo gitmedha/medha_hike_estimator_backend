@@ -127,46 +127,27 @@ const getPickLists = async ()=>{
 
  const uploadBonusData = async (req) => {
   try {
+
     const filePath = req.file.path;
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const requiredFields = {
-      id: '__EMPTY',
-      name: '__EMPTY_1',
-      kra: 'Apr - Mar 2023',
-      competency: '__EMPTY_2',
-      average: '__EMPTY_3',
-      manager: '__EMPTY_4',
-    };
-
-    const filteredDataDynamic = [];
-    for (const row of data.slice(1)) {
-      const result = {};
-      let isValid = true;
-
-      for (const [key, value] of Object.entries(requiredFields)) {
-        result[key] = row[value];
-
-        if (!result[key]) {
-          isValid = false;
-        }
-      }
-
-      if (isValid) {
-        filteredDataDynamic.push(result);
-      }
-
-      if (result.id === "M0333") {
-        break;
-      }
+    for (let row of data){
+    const dataObj = {}
+    let employeeInfo = row.Employee.split(" ");
+    let managerInfo = row.Reviewer.split(" ");
+    dataObj.id = `${employeeInfo[0]}`;
+    dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.average = parseFloat(row['Final Score']);
+    dataObj.kra = parseFloat(row['KRA vs GOALS']);
+    dataObj.compentency = parseFloat(row.Competency);
+    // dataObj.appraisal_cycle = row['Appraisal Cycle'] ? row['Appraisal Cycle'] : "April-Sep 2024";
+    await insertBulkData(dataObj,row['Appraisal Cycle']);
     }
-
-    for (const row of filteredDataDynamic) {
-      await insertBulkData(row,'Apr-Mar 2023');
-    }
+    return { message: "Data uploaded and inserted successfully!" };
 
   } catch (error) {
     console.log("error",error)
