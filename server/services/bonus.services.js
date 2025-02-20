@@ -144,7 +144,7 @@ const getPickLists = async ()=>{
     dataObj.average = parseFloat(row['Final Score']);
     dataObj.kra = parseFloat(row['KRA vs GOALS']);
     dataObj.compentency = parseFloat(row.Competency);
-    // dataObj.appraisal_cycle = row['Appraisal Cycle'] ? row['Appraisal Cycle'] : "April-Sep 2024";
+    
     await insertBulkData(dataObj,row['Appraisal Cycle']);
     }
     return { message: "Data uploaded and inserted successfully!" };

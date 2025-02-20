@@ -117,7 +117,7 @@ const insertBulkData = async(data,review_cycle)=>{
                 employee_id: data.id,
                 full_name: data.name,
                 kra: parseFloat(parseFloat(data.kra).toFixed(1)),
-                compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
+                compentency: parseFloat(parseFloat(data.compentency).toFixed(1)),
                 average: parseFloat(parseFloat(data.average).toFixed(1)),
                 review_cycle: review_cycle,
                 manager: data.manager,
