@@ -1,4 +1,5 @@
 const axios = require('axios');
+const db = require('../config/db');
 const sendAuthUrl = async (req, res) => {
     try {
         const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZOHOPEOPLE.forms.ALL&client_id=${process.env.ZOHO_CLIENT_ID}&response_type=code&access_type=offline&redirect_uri=${process.env.ZOHO_REDIRECT_URI}`;
@@ -28,12 +29,14 @@ const zohoAuthToken = async(req,res)=>{
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
+console.log(code,'code')
+        console.log("response", response)
 
         const { access_token, refresh_token } = response.data;
         
         // Store the tokens securely (database or env variable)
-        // console.log("Access Token:", access_token);
-        // console.log("Refresh Token:", refresh_token);
+        console.log("Access Token:", access_token);
+        console.log("Refresh Token:", refresh_token);
 
        return res.send("Zoho Authorization Successful! You can now call APIs.");
     
@@ -50,7 +53,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
     const limit = 200;
 
     try {
-        const accessToken = '1000.213a77dcb2c89218ca7166614f2ee44d.59ff40ba4e8a6e5efab688a631399ab1';
+        const accessToken = '1000.1cb7b3e53ff9c626eb1a84ff986a44ef.40603fe44899f95e2eaf9c4ff4d667c3';
         if (!accessToken) {
             return res.status(400).json({ error: "Missing Zoho access token" });
         }
@@ -88,6 +91,27 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
         }
 
         // console.log(`Total employees fetched: ${allRecords.length}`);
+        for (let i = 0; i < allRecords.length; i++) {
+            const employee = allRecords[i];
+            const { EmployeeID, FirstName, LastName, EmailID, Department, Designation, Reporting_To, Dateofjoining ,Current_Band,total_experience,Employeestatus,GROSSMONTHLY_SALARY_FEE_Rs,Employee_type} = employee;
+            await db('employee_details').insert({
+                employee_id: EmployeeID,
+                first_name: FirstName,
+                last_name: LastName,
+                email_id: EmailID,
+                department: Department,
+                title: Designation,
+                date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
+                employee_status: Employeestatus,
+                employee_type: Employee_type,
+                experience: total_experience ? parseFloat(total_experience) : null,
+                current_band: Current_Band,
+                gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs) : null
+            });
+            
+          
+        }
+console.log("total",allRecords.length)
         return res.status(200).json({ data: allRecords });
 
     } catch (error) {
