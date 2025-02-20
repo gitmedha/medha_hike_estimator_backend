@@ -29,6 +29,7 @@ const userRoutes = require('./routes/userRoutes');
 const incrementalRoutes = require('./routes/incrementRoutes');
 const bonuses = require('./routes/bonusRoute')
 const zohoRoutes = require('./routes/zohoRoutes');
+const webHooks = require('./routes/webHookRoutes');
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -37,5 +38,7 @@ app.use('/api/historical_data',historicalRoutes);
 app.use('/api/increments',incrementalRoutes);
 app.use('/api/bonuses',bonuses);
 app.use('/auth/zoho',zohoRoutes);
+app.use('/webhook',webHooks);
+
 
 module.exports = app;

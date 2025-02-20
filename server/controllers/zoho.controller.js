@@ -1,9 +1,6 @@
 const axios = require('axios');
 const sendAuthUrl = async (req, res) => {
     try {
-        console.log('env',process.env.ZOHO_CLIENT_ID);
-        console.log('redirect',process.env.ZOHO_REDIRECT_URI);
-
         const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZOHOPEOPLE.forms.ALL&client_id=${process.env.ZOHO_CLIENT_ID}&response_type=code&access_type=offline&redirect_uri=${process.env.ZOHO_REDIRECT_URI}`;
         res.redirect(authUrl);
     } catch (error) {
@@ -35,8 +32,8 @@ const zohoAuthToken = async(req,res)=>{
         const { access_token, refresh_token } = response.data;
         
         // Store the tokens securely (database or env variable)
-        console.log("Access Token:", access_token);
-        console.log("Refresh Token:", refresh_token);
+        // console.log("Access Token:", access_token);
+        // console.log("Refresh Token:", refresh_token);
 
        return res.send("Zoho Authorization Successful! You can now call APIs.");
     
@@ -90,7 +87,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
 
         }
 
-        console.log(`Total employees fetched: ${allRecords.length}`);
+        // console.log(`Total employees fetched: ${allRecords.length}`);
         return res.status(200).json({ data: allRecords });
 
     } catch (error) {
