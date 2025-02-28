@@ -201,6 +201,8 @@ const calculateBonus = async (normalizedRating,id,reviewCycle)=>{
       .orderBy('ratings', 'asc')
       .first(); 
 
+      console.log("result",result)
+
     if (result) {
       await db('bonus_details')
       .where('employee_id', id)

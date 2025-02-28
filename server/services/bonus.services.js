@@ -319,6 +319,63 @@ const BulkBonus = async()=>{
 
 }
 
+function findLesserYearData(records, currentAppraisalCycle) {
+  try{
+      
+  const currentYear = parseInt(currentAppraisalCycle.split(' ')[1]);
+  for (const record of records) {
+    const year = parseInt(record.review_cycle.split(' ')[1]);
+  
+    if (year < currentYear) {
+      return record;
+    }
+  }
+
+  return null;
+
+  }catch(e){
+      console.log(e);
+      throw new Error('Error finding lesser year data');
+  }
+}
+
+const getWeightedBonus = async(employee_id,review_cycle)=>{
+  try{
+    const records = await db('bonus_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(review_cycle, ' ', 2) AS INT) DESC")
+    const currentRecord = await records.find(record => record.review_cycle === review_cycle);
+    const pastIncrement = await findLesserYearData(records,currentRecord.review_cycle);
+    if(!pastIncrement) return currentRecord.bonus;
+    else if (!pastIncrement.bonus) return currentRecord.bonus;
+
+    const currentBonus = parseFloat(currentRecord.bonus);
+    const pastBonus = parseFloat(pastIncrement.bonus);
+
+    // Calculate weighted increment
+    const weightedBonus = (pastBonus * 0.33334) + (currentBonus * 0.66667);
+    return weightedBonus.toFixed(2);
+
+}catch(err){
+  console.error('Error in getWeightedBonus:', err);
+    throw new Error('Error fetching weighted bonus');
+}
+}
+
+const calculateBulkWeightedBonus = async ()=>{
+  try{
+    const allData = await getAllData();
+    allData.forEach(async bonusData=>{
+      if(bonusData.bonus){
+      const weightedBonus = await getWeightedBonus(bonusData.employee_id,bonusData.review_cycle);
+      await db('bonus_details').update({ weighted_bonus: parseFloat(weightedBonus)}).where('id',bonusData.id);
+      }
+    })
+
+    return allData;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
+  }
+}
+
 
 module.exports = {
     fetchAllBonusService,
@@ -333,5 +390,7 @@ module.exports = {
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,
-    BulkBonus
+    BulkBonus,
+    getWeightedBonus,
+    calculateBulkWeightedBonus
 }
