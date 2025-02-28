@@ -50,6 +50,10 @@ router.get('/download_excel', incrementController.downloadExcelFile);
 
 router.post('/upload_excel', upload.single('file'), incrementController.uploadExcelFile);
 
+router.get('/calculate_bulk_weighted_increment', incrementController.getBulkWeightedIncrement);
+
+router.post('/get_weighted_increment', incrementController.getWeightedIncrement);
+
 
 
 

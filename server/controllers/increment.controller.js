@@ -140,12 +140,17 @@ const getIncrementData = async (req, res) => {
   }
 
 const getWeightedIncrement = async(req, res) => {
-  const { annualIncrement , biAnnualIncrement, employee_id} = req.body;
+  const {employee_id, reviewCycle} = req.body;
   try {
-    const result = await incrementService.getWeightedIncrement(employee_id,biAnnualIncrement,annualIncrement);
+    const result = await incrementService.getWeightedIncrement(employee_id,reviewCycle);
     if (result.length === 0) {
-      return res.status(404).json({ message: 'Increment not found' });
+      return res.status(404).json({ message: 'Weighted Increment not found' });
     }
+    if (isNaN(parseFloat(result))) {
+      return res.status(404).json({ message: 'Weighted Increment not found' });
+  }
+  await db('increment_details').where({employee_id: employee_id, appraisal_cycle: reviewCycle}).update({weighted_increment: parseFloat(result)});
+ 
     return res.status(200).json(result);
   } catch (err) {
     console.error('Error fetching weighted increment:', err.message);
@@ -217,6 +222,16 @@ const uploadExcelFile = async(req,res)=>{
     res.status(500).json({error: 'Error uploading excel file', details: error.message});
   }
 }
+const getBulkWeightedIncrement = async(req,res)=>{
+  try {
+    const result = await incrementService.getBulkWeightedIncrement();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching bulk weighted increment:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 
 
 module.exports = {
@@ -238,5 +253,6 @@ module.exports = {
     getBulkNormalizedRatings,
     getBulkIncrement,
     uploadExcelFile,
-    downloadExcelFile
+    downloadExcelFile,
+    getBulkWeightedIncrement
 }

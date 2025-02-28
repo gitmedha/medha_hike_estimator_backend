@@ -260,9 +260,9 @@ const getIncrement = async(normalizedRating,employeeId,reviewCycle)=>{
   }
 }
 
-const getWeightedIncrement = async (id,biAnnualIncrement,annualIncrement)=>{
+const getWeightedIncrement = async (id,appraisal_cycle)=>{
   try {
-    const result = await incrementModel.getWeightedIncrement(id,biAnnualIncrement,annualIncrement);
+    const result = await incrementModel.getWeightedIncrement(id,appraisal_cycle);
     return result;
   } catch (error) {
     throw new Error(`Service Error: Unable to fetch weighted increment data. ${error.message}`);
@@ -356,6 +356,22 @@ const uploadExcelFile = async (req) => {
     throw new Error("Error while uploading Excel file: " + err.message);
   }
 };
+
+const getBulkWeightedIncrement = async ()=>{
+  try {
+    const allIncrementData = await incrementModel.getAllInrementData();
+    allIncrementData.forEach(async incrementData=>{
+    if(incrementData.increment){
+      const weightedIncrement = await incrementModel.getWeightedIncrement(incrementData.employee_id,incrementData.appraisal_cycle);
+      await db("increment_details").update({weighted_increment:parseFloat(weightedIncrement)}).where({id: incrementData.id});
+    }
+    })
+    return allIncrementData;
+  } catch (error) {
+    console.log("error",error)
+    throw new Error(`Service Error: Unable to fetch bulk weighted increment data. ${error.message}`);
+  }
+}
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -373,5 +389,7 @@ const uploadExcelFile = async (req) => {
     getHistoricalData,
     getBulkNormalizedRatings,
     getBulkIncrement,
-    uploadExcelFile
+    uploadExcelFile,
+    getBulkWeightedIncrement,
+    getWeightedIncrement
   };
