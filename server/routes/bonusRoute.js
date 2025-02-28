@@ -17,7 +17,9 @@ const {
     uploadBonusFile,
     bulkRating,
     calculateBulkBonus,
-    downloadPgToXl
+    downloadPgToXl,
+    weightedBonus,
+    bulkWeightedBonus
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -69,5 +71,10 @@ router.get('/calculate_bulk_normalized_rating',bulkRating);
 router.get('/calculate_bulk_bonus',calculateBulkBonus);
 
 router.get('/download_excel', downloadPgToXl);
+
+router.post('/get_weighted_bonus',weightedBonus);
+
+router.post('/calculate_bulk_weighted_bonus',bulkWeightedBonus);
+
 
 module.exports = router;

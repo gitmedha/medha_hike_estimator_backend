@@ -11,8 +11,12 @@ const {
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,
-    BulkBonus
+    BulkBonus,
+    getWeightedBonus,
+    calculateBulkWeightedBonus
 } = require("../services/bonus.services");
+
+const db = require("../config/db");
 
 const {updateNormalizedRating} = require("../models/bonus.model");
 const { downloadExcel} = require('../utils/downloadExcel');
@@ -166,7 +170,31 @@ const downloadPgToXl = async (req,res)=>{
       res.status(500).json({error: 'Error downloading excel file', details: error.message});
     }
   }
- 
+
+const weightedBonus = async(req,res)=>{
+    try {
+        const { employeeId, reviewCycle } = req.body;
+        const result = await getWeightedBonus(employeeId,reviewCycle);
+        if (isNaN(parseFloat(result))) {
+            return res.status(404).json({ message: 'Weighted bonus not found' });
+        }
+        await db('bonus_details').where({employee_id: employeeId, review_cycle: reviewCycle}).update({weighted_bonus: parseFloat(result)});
+       
+        return res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const bulkWeightedBonus= async (req,res)=>{
+    try {
+        const result = await calculateBulkWeightedBonus();
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
 module.exports ={
     fetchAllBonus,
     fetchBonusById,
@@ -183,5 +211,7 @@ module.exports ={
     bulkRating,
     calculateBulkBonus,
     calculateBulkBonus,
-    downloadPgToXl
+    downloadPgToXl,
+    weightedBonus,
+    bulkWeightedBonus
 }
