@@ -193,29 +193,29 @@ const updateNormalizedRating = async(id,reviewCycle,ratings) => {
     }
 }
 
-const calculateBonus = async (normalizedRating,id,reviewCycle)=>{
-    try { 
-      const result = await db('bonus_measurements')
-      .select('ratings', 'bonus')
-      .where('ratings', '>=', normalizedRating)
-      .orderBy('ratings', 'asc')
-      .first(); 
+const calculateBonus = async (normalizedRating, id, reviewCycle) => {
+    try {
+        const result = await db('bonus_measurements')
+            .select('ratings', 'bonus')
+            .orderByRaw('ABS(ratings - ?) ASC', [normalizedRating])
+            .first();
 
+        if (result) {
+            await db('bonus_details')
+                .where('employee_id', id)
+                .andWhere('review_cycle', reviewCycle)
+                .update('bonus', result.bonus);
 
-    if (result) {
-      await db('bonus_details')
-      .where('employee_id', id)
-      .andWhere('review_cycle', reviewCycle)
-      .update('bonus', result.bonus);
-      return result.bonus;
-    }
+            return result.bonus;
+        }
 
-    return null;
-        
+        return null;
+
     } catch (error) {
         throw new Error("Error Fetching bonus: " + error.message);
     }
-}
+};
+
 
 
 const getAllData = async ()=>{
