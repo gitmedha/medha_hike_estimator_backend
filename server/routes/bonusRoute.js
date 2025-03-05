@@ -27,7 +27,7 @@ router.get('/get_bonuses/:limit/:offset/:sortBy/:sortOrder', fetchAllBonus);
 
 // Fetch bonus data by ID
 
-router.get('/fetch-bonus/:id', fetchBonusById);
+router.get('/fetch-bonus/:id/:review_cycle', fetchBonusById);
 
 // Create new bonus data
 router.post('/create-bonus', createBonus);

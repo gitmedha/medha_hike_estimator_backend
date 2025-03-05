@@ -60,7 +60,7 @@ const createBonus = async (bonusData) => {
     }
 }
 
-const getBonusById =async (id)=>{
+const getBonusById =async (id,reviewCycle)=>{
     try {
         
       const bonusData = await db('bonus_details')
@@ -75,7 +75,8 @@ const getBonusById =async (id)=>{
           'bonus_details.employee_id',
           'employee_details.employee_id'
         )
-        .where('bonus_details.employee_id', id);
+        .where('bonus_details.employee_id', id)
+        .andWhere('bonus_details.review_cycle',reviewCycle)
       return bonusData;
     } catch (err) {
       console.error(err);

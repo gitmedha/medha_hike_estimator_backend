@@ -70,12 +70,15 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
  }
 
 
-const getBonusByIdService = async(id)=>{
+const getBonusByIdService = async(id,reviewCycle)=>{
     try{
         if(!id){
             throw new Error("Invalid bonus id");
         }
-        const bonusData = await getBonusById(id);
+        if(!reviewCycle){
+          throw new Error("Invalid review cycle");
+        }
+        const bonusData = await getBonusById(id,reviewCycle);
         return bonusData;
     } catch(error){
         console.error('Error in getBonusByIdService:', error.message);
@@ -341,8 +344,12 @@ function findLesserYearData(records, currentAppraisalCycle) {
 
 const getWeightedBonus = async(employee_id,review_cycle)=>{
   try{
+    if(!employee_id ||!review_cycle){
+        throw new Error('Invalid employee_id or review_cycle');
+    }
     const records = await db('bonus_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(review_cycle, ' ', 2) AS INT) DESC")
     const currentRecord = await records.find(record => record.review_cycle === review_cycle);
+
     const pastIncrement = await findLesserYearData(records,currentRecord.review_cycle);
     if(!pastIncrement) return currentRecord.bonus;
     else if (!pastIncrement.bonus) return currentRecord.bonus;

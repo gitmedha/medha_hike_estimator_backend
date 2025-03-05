@@ -33,9 +33,9 @@ const fetchAllBonus = async(req,res)=>{
 }
 
 const fetchBonusById = async(req,res)=>{
-    const {id} = req.params;
+    const {id,review_cycle} = req.params;
     try {
-        const result = await getBonusByIdService(id);
+        const result = await getBonusByIdService(id,review_cycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})
