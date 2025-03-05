@@ -195,6 +195,18 @@ const bulkWeightedBonus= async (req,res)=>{
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 }
+
+const getAllReviewCycles = async(req,res)=>{
+    const {id} = req.params;
+    try {
+    
+        const result = await db('bonus_details').select('review_cycle').where('employee_id',id);
+        const picklistArray = result.map(cycle=>({label:cycle.review_cycle, value:cycle.review_cycle}));
+        return res.status(200).json(picklistArray);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
 module.exports ={
     fetchAllBonus,
     fetchBonusById,
@@ -213,5 +225,6 @@ module.exports ={
     calculateBulkBonus,
     downloadPgToXl,
     weightedBonus,
-    bulkWeightedBonus
+    bulkWeightedBonus,
+    getAllReviewCycles
 }
