@@ -79,5 +79,7 @@ router.post('/calculate_bulk_weighted_bonus',bulkWeightedBonus);
 
 router.get('/review-cycle-dropdowns/:id', getAllReviewCycles)
 
+router.get('/get_data_by_review_cycle/:id/:review_cycle',fetchBonusById);
+
 
 module.exports = router;
