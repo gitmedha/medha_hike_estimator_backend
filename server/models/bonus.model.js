@@ -197,7 +197,7 @@ const calculateBonus = async (normalizedRating, id, reviewCycle) => {
     try {
         const result = await db('bonus_measurements')
             .select('ratings', 'bonus')
-            .orderByRaw('ABS(ratings - ?) ASC', [normalizedRating])
+            .where('ratings', '>=', normalizedRating)
             .first();
 
         if (result) {
@@ -215,6 +215,7 @@ const calculateBonus = async (normalizedRating, id, reviewCycle) => {
         throw new Error("Error Fetching bonus: " + error.message);
     }
 };
+
 
 
 
