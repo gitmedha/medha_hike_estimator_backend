@@ -26,8 +26,10 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
         }
 
         const bonusData = await getBonus(offset, limit, sortBy, sortByOrder);
+        console.log("bonusData",bonusData)
         return bonusData;
     } catch(error){
+      console.log("errprint",error)
         throw new Error(`Service Error: Unable to fetch bonus data. ${error.message}`);
     }
  }

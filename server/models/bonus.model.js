@@ -1,24 +1,37 @@
 const db = require('../config/db');
 
-const getBonus = async(offset,limit,sortBy,sortByOrder)=>{
-    try{
-        const bonusData = await db('bonus_details')
-       .select("*")
-       .offset(offset)
-       .limit(limit)
-       .orderBy(sortBy,sortByOrder);
+const getBonus = async (offset, limit) => {
+    try {
+        const bonusData = await db
+            .select("*")
+            .from(function () {
+                this.select("bd.*")
+                    .from("bonus_details as bd")
+                    .whereRaw(`
+                        RIGHT(review_cycle, 4) = (
+                            SELECT MAX(RIGHT(review_cycle, 4)) 
+                            FROM bonus_details 
+                            WHERE employee_id = bd.employee_id
+                        )
+                    `)
+                    .as("latest_bonus");
+            })
+            .offset(offset)
+            .limit(limit)
+            .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC");
 
-       const totalCount = await db('bonus_details').count("* as total");
-       return {
+        const totalCount = await db("bonus_details")
+            .countDistinct("employee_id as total");
+
+        return {
             totalCount: totalCount[0].total,
-            data: bonusData
-       };
-
-    }
-    catch(error){
+            data: bonusData,
+        };
+    } catch (error) {
         throw new Error(error.message);
     }
-}
+};
+
 
 const getBonusDropdown = async (field)=>{
     try{

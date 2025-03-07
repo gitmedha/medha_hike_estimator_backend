@@ -2,17 +2,32 @@ const db = require('../config/db');
 
 const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
     try{
-        const incrementData = await db('increment_details')
-       .select("*")
-       .offset(offset)
-       .limit(limit)
-       .orderBy(sortBy,sortOrder);
 
-       const totalCount = await db('increment_details').count("* as total");
-       return {
+       const incrementData = await db
+            .select("*")
+            .from(function () {
+                this.select("id.*")
+                    .from("increment_details as id")
+                    .whereRaw(`
+                        RIGHT(appraisal_cycle, 4) = (
+                            SELECT MAX(RIGHT(appraisal_cycle, 4)) 
+                            FROM increment_details 
+                            WHERE employee_id = id.employee_id
+                        )
+                    `)
+                    .as("latest_increment");
+            })
+            .offset(offset)
+            .limit(limit)
+            .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC");
+
+        const totalCount = await db("increment_details")
+            .countDistinct("employee_id as total");
+
+        return {
             totalCount: totalCount[0].total,
-            data: incrementData
-       };
+            data: incrementData,
+        };
     }catch(err){
         throw new Error('Error fetching increment data');
     }
