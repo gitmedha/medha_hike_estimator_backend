@@ -38,7 +38,7 @@ router.post('/get_increment', incrementController.getIncrement);
 
 router.post('/get_weighted_increment', incrementController.getWeightedIncrement);
 
-router.post('/get_increment_by_review_cycle', incrementController.getIncrementByReviewCycle);
+router.get('/get_increment_by_review_cycle/:id/:review_cycle', incrementController.getIncrementDataById);
 
 router.post('/get_historical_data_increment', incrementController.getHistoricalData);
 
@@ -53,6 +53,10 @@ router.post('/upload_excel', upload.single('file'), incrementController.uploadEx
 router.get('/calculate_bulk_weighted_increment', incrementController.getBulkWeightedIncrement);
 
 router.post('/get_weighted_increment', incrementController.getWeightedIncrement);
+
+router.get('/review-cycle-dropdowns/:id', incrementController.getAllReviewCycles)
+
+router.get('/get_data_by_review_cycle/:id/:review_cycle',incrementController.getIncrementDataById);
 
 
 

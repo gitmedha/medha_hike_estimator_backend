@@ -20,14 +20,9 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
 
 const getIncrementDataById = async (id,review_cycle) => {
     try {
+        console.log(id,review_cycle)
         const ifExists = (await db('increment_details').select('*').where('employee_id',id)).length && (await db('employee_details').select('*').where('employee_id',id)).length;
         if(!ifExists) throw new Error('Employee not found');
-    
-    // const weightedIncrementCheck = await db('increment_details').select('weighted_increment').where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
-    // if(!weightedIncrementCheck.length){   
-    //     const weightedIncrement = await getWeightedIncrement(id,review_cycle);
-    //     await db('increment_details').update({weighted_increment:weightedIncrement}).where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
-    // }
 
       const incrementData = await db('increment_details')
         .select(

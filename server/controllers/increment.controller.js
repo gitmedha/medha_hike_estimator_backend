@@ -1,6 +1,7 @@
 const incrementService = require('../services/increment.service');
 const incrementModel = require('../models/increment.model');
 const { downloadExcel} = require('../utils/downloadExcel');
+const db = require('../config/db');
 
 
 
@@ -232,6 +233,17 @@ const getBulkWeightedIncrement = async(req,res)=>{
   }
 }
 
+const getAllReviewCycles = async(req,res)=>{
+  const {id} = req.params;
+  try {
+  
+      const result = await db('increment_details').select('appraisal_cycle').where('employee_id',id);
+      const picklistArray = result.map(cycle=>({label:cycle.appraisal_cycle, value:cycle.appraisal_cycle}));
+      return res.status(200).json(picklistArray);
+  } catch (error) {
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+}
 
 
 module.exports = {
@@ -254,5 +266,7 @@ module.exports = {
     getBulkIncrement,
     uploadExcelFile,
     downloadExcelFile,
-    getBulkWeightedIncrement
+    getBulkWeightedIncrement,
+    getAllReviewCycles
 }
+
