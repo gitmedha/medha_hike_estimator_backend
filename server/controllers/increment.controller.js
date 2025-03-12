@@ -174,9 +174,9 @@ const getIncrementByReviewCycle = async(req,res)=>{
 }
 
 const getHistoricalData = async(req,res)=>{
-  const { employeeName } = req.body;
+  const { employeeName,sortBy,sortOrder } = req.body;
   try {
-    const result = await incrementService.getHistoricalData(employeeName);
+    const result = await incrementService.getHistoricalData(employeeName,sortBy,sortOrder);
     if (result.length === 0) {
       return res.status(404).json({ message: 'Historical data not found for the given employee and review cycle' });
     }

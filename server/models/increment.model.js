@@ -19,7 +19,12 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
             })
             .offset(offset)
             .limit(limit)
-            .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC");
+            .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC")
+            .modify((queryBuilder) => {
+                if (sortBy && sortOrder) {
+                    queryBuilder.orderBy(sortBy, sortOrder);
+                }
+            });
 
         const totalCount = await db("increment_details")
             .countDistinct("employee_id as total");
@@ -352,9 +357,9 @@ const getIncrementDataByReviewCycle = async(employeeID,reviewCycle)=>{
     }
 }
 
-const getHistoricalData = async (emplyeeName)=>{
+const getHistoricalData = async (emplyeeName,sortBy,sortOrder)=>{
     try{
-        const historicalData = await db('historical_data').select("*").where('employee', emplyeeName);
+        const historicalData = await db('historical_data').select("*").where('employee', emplyeeName).orderBy(sortBy,sortOrder)
         return historicalData;
     }catch(err){
         console.log(err)

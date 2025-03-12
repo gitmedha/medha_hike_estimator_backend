@@ -278,9 +278,9 @@ const getIncrementDataByReviewCycle = async (employeeID,reviewCycle)=>{
   }
 }
 
-const getHistoricalData = async (employeeName)=>{
+const getHistoricalData = async (employeeName,sortBy,sortOrder)=>{
   try {
-    const result = await incrementModel.getHistoricalData(employeeName);
+    const result = await incrementModel.getHistoricalData(employeeName,sortBy,sortOrder);
     return result;
   } catch (error) {
     console.log(error)
