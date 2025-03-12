@@ -89,8 +89,8 @@ const searchPickList = async(req,res) =>{
 
 const getEmployeeHistoricDetails = async (req, res) => {
   try {
-    const { first_name,last_name } = req.params;
-    const result = await employeeService.getEmployeeHistoricDetails(first_name,last_name);
+    const { first_name,last_name ,sortBy,sortOrder} = req.params;
+    const result = await employeeService.getEmployeeHistoricDetails(first_name,last_name,sortBy,sortOrder);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: 'Error fetching employee historical details', details: error.message });

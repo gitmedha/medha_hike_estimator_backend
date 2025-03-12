@@ -106,13 +106,13 @@ const searchPickList = async (dropField)=>{
     }
 }
 
-const getEmployeeHistoricDetails = async (firstName,lastName) =>{
+const getEmployeeHistoricDetails = async (firstName,lastName,sortBy,sortOrder) =>{
   try {
     const historicalDetails = await db('historical_data')
                    .select('kra_vs_goals', 'employee', 'ending_month', 'final_score', 'competency', 'start_month', 'reviewer', 'id')
-                   .where('employee', `${firstName} ${lastName}`);    
+                   .where('employee', `${firstName} ${lastName}`)
+                   .orderBy(sortBy,sortOrder);    
 
-                   console.log(historicalDetails);
                    
     return historicalDetails;
   } catch (error) {

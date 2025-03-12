@@ -62,8 +62,8 @@ const searchPickList = async (dropDownField) => {
     throw new Error(error.message);
   }
 }
-const getEmployeeHistoricDetails = async (firstName, lastName)=>{
-  const result = await employeeModel.getEmployeeHistoricDetails(firstName, lastName);
+const getEmployeeHistoricDetails = async (firstName, lastName,sortBy,sortOrder)=>{
+  const result = await employeeModel.getEmployeeHistoricDetails(firstName, lastName,sortBy,sortOrder);
   return result;
 }
 
