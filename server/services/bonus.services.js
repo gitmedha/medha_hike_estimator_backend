@@ -26,7 +26,6 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
         }
 
         const bonusData = await getBonus(offset, limit, sortBy, sortByOrder);
-        console.log("bonusData",bonusData)
         return bonusData;
     } catch(error){
       console.log("errprint",error)
@@ -324,50 +323,53 @@ const BulkBonus = async()=>{
 
 }
 
-function findLesserYearData(records, currentAppraisalCycle) {
-  try{
-      
-  const currentYear = parseInt(currentAppraisalCycle.split(' ')[1]);
-  for (const record of records) {
-    const year = parseInt(record.review_cycle.split(' ')[1]);
+
+const getWeightedBonus = async (employee_id, review_cycle) => {
+  try {
+    if (!employee_id || !review_cycle) {
+      throw new Error('Invalid employee_id or review_cycle');
+    }
+
+    // Fetch the latest bonus record for the employee
+    const bonusRecord = await db('bonus_details')
+      .select("*")
+      .where('employee_id', employee_id)
+      .andWhere('review_cycle', review_cycle)
+      .first();
+
+    if (!bonusRecord) {
+      throw new Error('No bonus record found for the given review cycle');
+    }
+
+    const bonusYearMatch = bonusRecord.review_cycle.match(/\d{4}$/);
+    if (!bonusYearMatch) {
+      throw new Error('Invalid bonus review cycle format');
+    }
+    const bonusYear = parseInt(bonusYearMatch[0]);
+
+    const pastIncrement = await db('increment_details')
+    .select("*")
+    .where('employee_id', employee_id)
+    .andWhereRaw(`CAST(RIGHT(appraisal_cycle, 4) AS INT) = ?`, [bonusYear]) // Extract the last 4 characters and cast to INT
+    .first();
   
-    if (year < currentYear) {
-      return record;
+    if (!pastIncrement || !pastIncrement.increment) {
+      return parseFloat(bonusRecord.bonus).toFixed(2);
     }
-  }
 
-  return null;
+    const currentBonus = parseFloat(bonusRecord.bonus);
+    const pastIncrementValue = parseFloat(pastIncrement.increment);
 
-  }catch(e){
-      console.log(e);
-      throw new Error('Error finding lesser year data');
-  }
-}
-
-const getWeightedBonus = async(employee_id,review_cycle)=>{
-  try{
-    if(!employee_id ||!review_cycle){
-        throw new Error('Invalid employee_id or review_cycle');
-    }
-    const records = await db('bonus_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(review_cycle, ' ', 2) AS INT) DESC")
-    const currentRecord = await records.find(record => record.review_cycle === review_cycle);
-
-    const pastIncrement = await findLesserYearData(records,currentRecord.review_cycle);
-    if(!pastIncrement) return currentRecord.bonus;
-    else if (!pastIncrement.bonus) return currentRecord.bonus;
-
-    const currentBonus = parseFloat(currentRecord.bonus);
-    const pastBonus = parseFloat(pastIncrement.bonus);
-
-    // Calculate weighted increment
-    const weightedBonus = (pastBonus * 0.33334) + (currentBonus * 0.66667);
+    // Calculate weighted bonus
+    const weightedBonus = (pastIncrementValue * 0.33334) + (currentBonus * 0.66667);
     return weightedBonus.toFixed(2);
 
-}catch(err){
-  console.error('Error in getWeightedBonus:', err);
+  } catch (err) {
+    console.error('Error in getWeightedBonus:', err);
     throw new Error('Error fetching weighted bonus');
-}
-}
+  }
+};
+
 
 const calculateBulkWeightedBonus = async ()=>{
   try{

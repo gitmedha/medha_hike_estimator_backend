@@ -289,25 +289,58 @@ function findLesserYearData(records, currentAppraisalCycle) {
   }
 
   
-const getWeightedIncrement = async (employee_id,review_cycle)=>{
-    try{
-        const records = await db('increment_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(appraisal_cycle, ' ', 2) AS INT) DESC")
-        const currentRecord = await records.find(record => record.appraisal_cycle === review_cycle);
-        const pastIncrement = await findLesserYearData(records,currentRecord.appraisal_cycle);
-        if(!pastIncrement) return currentRecord.increment;
-        else if (!pastIncrement.increment) return currentRecord.increment;
+  const getWeightedIncrement = async (employee_id, review_cycle) => {
+    try {
+        
+      if (!employee_id || !review_cycle) {
+        throw new Error('Invalid employee_id or review_cycle');
+      }
+      
+  
+      // Fetch the latest increment record for the employee
+      const incrementRecord = await db('increment_details')
+        .select("*")
+        .where('employee_id', employee_id)
+        .andWhere('appraisal_cycle', review_cycle)
+        .first();
+  
+      if (!incrementRecord) {
+        throw new Error('No increment record found for the given review cycle');
+      }
 
-        const currentIncrement = parseFloat(currentRecord.increment);
-        const pastIncrementValue = parseFloat(pastIncrement.increment);
-
-        // Calculate weighted increment
-        const weightedIncrement = (pastIncrementValue * 0.33334) + (currentIncrement * 0.66667);
-        return weightedIncrement.toFixed(2);
-
-    }catch(err){
-        throw new Error('Error fetching weighted increment');
+  
+      // Extract the increment year (last 4 digits)
+      const incrementYearMatch = incrementRecord.appraisal_cycle.match(/\d{4}$/);
+      if (!incrementYearMatch) {
+        throw new Error('Invalid increment review cycle format');
+      }
+      const incrementYear = parseInt(incrementYearMatch[0]); // e.g., 2024
+  
+      // Fetch the most recent past bonus where the ending year is LESS THAN the current increment year
+      const pastBonusRecord = await db('bonus_details')
+        .select("*")
+        .where('employee_id', employee_id)
+        .andWhereRaw(`CAST(RIGHT(review_cycle, 4) AS INT) < ?`, [incrementYear])
+        .orderByRaw(`CAST(RIGHT(review_cycle, 4) AS INT) DESC`)
+        .first();
+  
+      if (!pastBonusRecord || !pastBonusRecord.bonus) {
+        return parseFloat(incrementRecord.increment).toFixed(2); // Return only the current increment if no past bonus exists
+      }
+  
+      const currentIncrement = parseFloat(incrementRecord.increment);
+      const pastBonus = parseFloat(pastBonusRecord.bonus);
+  
+      // Calculate weighted increment
+      const weightedIncrement = (pastBonus * 0.33334) + (currentIncrement * 0.66667);
+      return weightedIncrement.toFixed(2);
+  
+    } catch (err) {
+      console.error('Error in getWeightedIncrement:', err);
+      throw new Error('Error fetching weighted increment');
     }
-}
+  };
+  
 
 
 const getIncrementDataByReviewCycle = async(employeeID,reviewCycle)=>{

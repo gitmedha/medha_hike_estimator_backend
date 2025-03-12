@@ -123,6 +123,7 @@ const uploadExcelFile = async (req) => {
     let duration = row['Appraisal Cycle'].split(" ");
     let start_month = duration[0];
     let end_month = duration[1];
+    dataObj.employee_id = `${employeeInfo[0]}`;
     dataObj.employee = `${employeeInfo[1]} ${employeeInfo[2]}`;
     dataObj.reviewer = `${managerInfo[1]} ${managerInfo[2]}`;
     dataObj.final_score = parseFloat(row['Final Score']);

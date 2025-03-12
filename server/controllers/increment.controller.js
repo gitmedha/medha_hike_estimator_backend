@@ -141,16 +141,16 @@ const getIncrementData = async (req, res) => {
   }
 
 const getWeightedIncrement = async(req, res) => {
-  const {employee_id, reviewCycle} = req.body;
+  const {employeeId, reviewCycle} = req.body;
   try {
-    const result = await incrementService.getWeightedIncrement(employee_id,reviewCycle);
+    const result = await incrementService.getWeightedIncrement(employeeId,reviewCycle);
     if (result.length === 0) {
       return res.status(404).json({ message: 'Weighted Increment not found' });
     }
     if (isNaN(parseFloat(result))) {
       return res.status(404).json({ message: 'Weighted Increment not found' });
   }
-  await db('increment_details').where({employee_id: employee_id, appraisal_cycle: reviewCycle}).update({weighted_increment: parseFloat(result)});
+  await db('increment_details').where({employee_id: employeeId, appraisal_cycle: reviewCycle}).update({weighted_increment: parseFloat(result)});
  
     return res.status(200).json(result);
   } catch (err) {
