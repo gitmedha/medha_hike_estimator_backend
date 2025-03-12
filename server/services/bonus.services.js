@@ -226,7 +226,7 @@ function calculateStandardizedValue(value, mean, stdDev) {
   }
   return (value - mean) / stdDev;
   }catch(err){
-    throw new Error("Error while calculating standardized value: "+ error.message);
+    throw new Error("Error while calculating standardized value: "+ err.message);
   }
 
 }
