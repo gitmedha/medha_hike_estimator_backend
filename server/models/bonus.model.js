@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const getBonus = async (offset, limit) => {
+const getBonus = async (offset, limit,sortBy, sortByOrder) => {
     try {
         const bonusData = await db
             .select("*")
@@ -18,7 +18,12 @@ const getBonus = async (offset, limit) => {
             })
             .offset(offset)
             .limit(limit)
-            .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC");
+            .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC")
+            .modify((queryBuilder) => {
+                if (sortBy && sortByOrder) {
+                    queryBuilder.orderBy(sortBy, sortByOrder);
+                }
+            });
 
         const totalCount = await db("bonus_details")
             .countDistinct("employee_id as total");
