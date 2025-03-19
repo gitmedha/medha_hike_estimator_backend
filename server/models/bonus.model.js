@@ -1,20 +1,22 @@
 const db = require('../config/db');
 
-const getBonus = async (offset, limit,sortBy, sortByOrder) => {
+const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'asc') => {
     try {
         const bonusData = await db
             .select("*")
             .from(function () {
                 this.select("bd.*")
                     .from("bonus_details as bd")
-                    .whereRaw(`
-                        RIGHT(review_cycle, 4) = (
-                            SELECT MAX(RIGHT(review_cycle, 4)) 
-                            FROM bonus_details 
-                            WHERE employee_id = bd.employee_id
-                        )
-                    `)
-                    .as("latest_bonus");
+                    .modify((queryBuilder) => {
+                        queryBuilder.whereRaw(`
+                            RIGHT(review_cycle, 4) = (
+                                SELECT MAX(RIGHT(review_cycle, 4)) 
+                                FROM bonus_details 
+                                WHERE employee_id = bd.employee_id
+                            )
+                        `);
+                    })
+                    .as("filtered_bonus"); // Alias for filtered dataset
             })
             .offset(offset)
             .limit(limit)
@@ -25,17 +27,21 @@ const getBonus = async (offset, limit,sortBy, sortByOrder) => {
                 }
             });
 
-        const totalCount = await db("bonus_details")
-            .countDistinct("employee_id as total");
+        // Get total count for pagination
+        const totalCountQuery = db("bonus_details").countDistinct("employee_id as total");
+
+        const totalCount = await totalCountQuery;
 
         return {
             totalCount: totalCount[0].total,
             data: bonusData,
         };
     } catch (error) {
-        throw new Error(error.message);
+        console.error(error);
+        throw new Error("Error fetching bonuses", error.message)
     }
 };
+
 
 
 const getBonusDropdown = async (field)=>{

@@ -25,6 +25,7 @@ const { downloadExcel} = require('../utils/downloadExcel');
 const fetchAllBonus = async(req,res)=>{
     try {
         const {offset,limit,sortBy,sortOrder} = req.params;
+        
         const result = await fetchAllBonusService(Number(offset),Number(limit),sortBy,sortOrder);
         return res.status(200).json(result);
     } catch (error) {
@@ -199,10 +200,34 @@ const bulkWeightedBonus= async (req,res)=>{
 const getAllReviewCycles = async(req,res)=>{
     const {id} = req.params;
     try {
-    
         const result = await db('bonus_details').select('review_cycle').where('employee_id',id);
         const picklistArray = result.map(cycle=>({label:cycle.review_cycle, value:cycle.review_cycle}));
         return res.status(200).json(picklistArray);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const getAllCycles = async(req,res)=>{
+    try {
+        const result = await db('bonus_details').select('review_cycle').distinct();
+        const picklistArray = result.map(cycle=>({label:cycle.review_cycle, value:cycle.review_cycle}));
+        return res.status(200).json(picklistArray);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const getAllBonusesByReview = async(req,res)=>{
+    const {pageSize,pageIndex,sortBy,sortOrder,reviewCycle} = req.query;
+    try {
+        const result = await db('bonus_details').where({review_cycle:reviewCycle}).orderBy(sortBy,sortOrder).limit(pageSize).offset(pageIndex * pageSize);
+        const totalCount = await db('bonus_details').where({review_cycle:reviewCycle}).count();
+        return res.status(200).json({
+            data: result,
+            totalCount: Number(totalCount[0].count)
+        });
+
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
@@ -226,5 +251,7 @@ module.exports ={
     downloadPgToXl,
     weightedBonus,
     bulkWeightedBonus,
-    getAllReviewCycles
+    getAllReviewCycles,
+    getAllCycles,
+    getAllBonusesByReview
 }

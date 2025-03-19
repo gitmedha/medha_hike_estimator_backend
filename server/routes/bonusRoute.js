@@ -20,7 +20,9 @@ const {
     downloadPgToXl,
     weightedBonus,
     bulkWeightedBonus,
-    getAllReviewCycles
+    getAllReviewCycles,
+    getAllCycles,
+    getAllBonusesByReview
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -80,6 +82,10 @@ router.post('/calculate_bulk_weighted_bonus',bulkWeightedBonus);
 router.get('/review-cycle-dropdowns/:id', getAllReviewCycles)
 
 router.get('/get_data_by_review_cycle/:id/:review_cycle',fetchBonusById);
+
+router.get('/get_review_cycles',getAllCycles);
+
+router.get('/get_bonuses_by_review',getAllBonusesByReview);
 
 
 module.exports = router;
