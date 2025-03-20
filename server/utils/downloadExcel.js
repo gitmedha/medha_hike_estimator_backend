@@ -4,7 +4,15 @@ const ExcelJS = require('exceljs');
 
 const downloadExcel = async(req,res,tableName)=>{
     try {
-        const rows = await db(`${tableName}`).select('*');
+        let reviewCycle = req.query.reviewCycle ?req.query.reviewCycle :null; 
+        let query =  db(`${tableName}`).select('*');
+
+        if(reviewCycle){
+            query = query.where('review_cycle', reviewCycle);
+        }
+
+
+        const rows = await query;
 
         if (rows.length === 0) {
             return res.status(404).send('No data found');

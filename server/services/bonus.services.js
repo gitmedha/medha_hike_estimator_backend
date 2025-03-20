@@ -219,14 +219,11 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 
 }
 
-function calculateStandardizedValue(value, mean, stdDev) {
+function calculateStandardizedValue(value, mean, stdDev, id) {
   try{
-    if (stdDev === 0) {
-      throw new Error("Standard deviation is zero, cannot standardize.");
-  }
   return (value - mean) / stdDev;
   }catch(err){
-    throw new Error("Error while calculating standardized value: "+ err.message);
+    throw new Error("Error while calculating standardized value: ", err.message);
   }
 
 }
@@ -243,12 +240,13 @@ const calculateBonusRating = async (data)=>{
           //population standard deviation for the all reportees
     
           const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
-        
-          const allRatings = await getAllRatings();
+          console.log("STDEVP",STDEVP, "employeeId",employeeId)
+          const allRatings = await getAllRatings(reviewCycle);
           
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+
           const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-          const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+          const normalizedRating = await calculateStandardizedValue(ratings,mean,std,employeeId);
           return parseFloat(normalizedRating.toFixed(2));
         }
         else {
@@ -257,7 +255,7 @@ const calculateBonusRating = async (data)=>{
         
       } catch (error) {
         console.log(error)
-        throw new Error("Error while calculating normalized rating "+ error.message);
+        throw new Error("Error while calculating normalized rating ", error.message);
       }
 }
 
@@ -285,9 +283,9 @@ const calculateBonusPercentage = async(ratings,id,reviewCycle) => {
 }
 
 
-const BulkBonusRating = async()=>{
+const BulkBonusRating = async(reviewCycle)=>{
   try {
-    const allData = await getAllData();
+    const allData = await getAllData(reviewCycle);
     allData.forEach(async bonusData=>{
       
       let data={};
@@ -306,9 +304,9 @@ const BulkBonusRating = async()=>{
 
 };
 
-const BulkBonus = async()=>{
+const BulkBonus = async(reviewCycle)=>{
   try {
-    const allData = await getAllData();
+    const allData = await getAllData(reviewCycle);
     allData.forEach(async bonusData=>{
       if(bonusData.normalized_ratings && !bonusData.bonus ){
       const bonus = await calculateBonusPercentage(bonusData.normalized_ratings,bonusData.employee_id,bonusData.review_cycle);
@@ -371,9 +369,9 @@ const getWeightedBonus = async (employee_id, review_cycle) => {
 };
 
 
-const calculateBulkWeightedBonus = async ()=>{
+const calculateBulkWeightedBonus = async (reviewCycle)=>{
   try{
-    const allData = await getAllData();
+    const allData = await getAllData(reviewCycle);
     allData.forEach(async bonusData=>{
       if(bonusData.bonus){
       const weightedBonus = await getWeightedBonus(bonusData.employee_id,bonusData.review_cycle);
