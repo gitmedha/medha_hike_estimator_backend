@@ -89,8 +89,6 @@ const searchHistoric = async(searchValue,from,to,limit,size)=>{
           .select(dropField)
           .orderBy(dropField, 'asc')
           .distinct()
-          .offset(0)
-          .limit(100);
           return dropDown;
       }
      

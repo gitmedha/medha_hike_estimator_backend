@@ -1,6 +1,7 @@
 const incrementService = require('../services/increment.service');
 const incrementModel = require('../models/increment.model');
 const { downloadExcel} = require('../utils/downloadExcel');
+const db = require('../config/db');
 
 
 
@@ -140,12 +141,17 @@ const getIncrementData = async (req, res) => {
   }
 
 const getWeightedIncrement = async(req, res) => {
-  const { annualIncrement , biAnnualIncrement, employee_id} = req.body;
+  const {employeeId, reviewCycle} = req.body;
   try {
-    const result = await incrementService.getWeightedIncrement(employee_id,biAnnualIncrement,annualIncrement);
+    const result = await incrementService.getWeightedIncrement(employeeId,reviewCycle);
     if (result.length === 0) {
-      return res.status(404).json({ message: 'Increment not found' });
+      return res.status(404).json({ message: 'Weighted Increment not found' });
     }
+    if (isNaN(parseFloat(result))) {
+      return res.status(404).json({ message: 'Weighted Increment not found' });
+  }
+  await db('increment_details').where({employee_id: employeeId, appraisal_cycle: reviewCycle}).update({weighted_increment: parseFloat(result)});
+ 
     return res.status(200).json(result);
   } catch (err) {
     console.error('Error fetching weighted increment:', err.message);
@@ -168,9 +174,9 @@ const getIncrementByReviewCycle = async(req,res)=>{
 }
 
 const getHistoricalData = async(req,res)=>{
-  const { employeeName } = req.body;
+  const { employeeName,sortBy,sortOrder } = req.body;
   try {
-    const result = await incrementService.getHistoricalData(employeeName);
+    const result = await incrementService.getHistoricalData(employeeName,sortBy,sortOrder);
     if (result.length === 0) {
       return res.status(404).json({ message: 'Historical data not found for the given employee and review cycle' });
     }
@@ -217,6 +223,27 @@ const uploadExcelFile = async(req,res)=>{
     res.status(500).json({error: 'Error uploading excel file', details: error.message});
   }
 }
+const getBulkWeightedIncrement = async(req,res)=>{
+  try {
+    const result = await incrementService.getBulkWeightedIncrement();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('Error fetching bulk weighted increment:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+const getAllReviewCycles = async(req,res)=>{
+  const {id} = req.params;
+  try {
+  
+      const result = await db('increment_details').select('appraisal_cycle').where('employee_id',id);
+      const picklistArray = result.map(cycle=>({label:cycle.appraisal_cycle, value:cycle.appraisal_cycle}));
+      return res.status(200).json(picklistArray);
+  } catch (error) {
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+}
 
 
 module.exports = {
@@ -238,5 +265,8 @@ module.exports = {
     getBulkNormalizedRatings,
     getBulkIncrement,
     uploadExcelFile,
-    downloadExcelFile
+    downloadExcelFile,
+    getBulkWeightedIncrement,
+    getAllReviewCycles
 }
+

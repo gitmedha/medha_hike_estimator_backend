@@ -2,17 +2,37 @@ const db = require('../config/db');
 
 const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
     try{
-        const incrementData = await db('increment_details')
-       .select("*")
-       .offset(offset)
-       .limit(limit)
-       .orderBy(sortBy,sortOrder);
 
-       const totalCount = await db('increment_details').count("* as total");
-       return {
+       const incrementData = await db
+            .select("*")
+            .from(function () {
+                this.select("id.*")
+                    .from("increment_details as id")
+                    .whereRaw(`
+                        RIGHT(appraisal_cycle, 4) = (
+                            SELECT MAX(RIGHT(appraisal_cycle, 4)) 
+                            FROM increment_details 
+                            WHERE employee_id = id.employee_id
+                        )
+                    `)
+                    .as("latest_increment");
+            })
+            .offset(offset)
+            .limit(limit)
+            .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC")
+            .modify((queryBuilder) => {
+                if (sortBy && sortOrder) {
+                    queryBuilder.orderBy(sortBy, sortOrder);
+                }
+            });
+
+        const totalCount = await db("increment_details")
+            .countDistinct("employee_id as total");
+
+        return {
             totalCount: totalCount[0].total,
-            data: incrementData
-       };
+            data: incrementData,
+        };
     }catch(err){
         throw new Error('Error fetching increment data');
     }
@@ -20,14 +40,9 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
 
 const getIncrementDataById = async (id,review_cycle) => {
     try {
+        console.log(id,review_cycle)
         const ifExists = (await db('increment_details').select('*').where('employee_id',id)).length && (await db('employee_details').select('*').where('employee_id',id)).length;
         if(!ifExists) throw new Error('Employee not found');
-    
-    const weightedIncrementCheck = await db('increment_details').select('weighted_increment').where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
-    if(!weightedIncrementCheck.length){   
-        const weightedIncrement = await getWeightedIncrement(id,review_cycle);
-        await db('increment_details').update({weighted_increment:weightedIncrement}).where('employee_id',id).andWhere('appraisal_cycle',review_cycle);
-    }
 
       const incrementData = await db('increment_details')
         .select(
@@ -279,25 +294,58 @@ function findLesserYearData(records, currentAppraisalCycle) {
   }
 
   
-const getWeightedIncrement = async (employee_id,review_cycle)=>{
-    try{
-        const records = await db('increment_details').select("*").where('employee_id', employee_id).orderByRaw("CAST(SPLIT_PART(appraisal_cycle, ' ', 2) AS INT) DESC")
-        const currentRecord = await records.find(record => record.appraisal_cycle === review_cycle);
-        const pastIncrement = await findLesserYearData(records,currentRecord.appraisal_cycle);
-        if(!pastIncrement) return currentRecord.increment;
-        else if (!pastIncrement.increment) return currentRecord.increment;
+  const getWeightedIncrement = async (employee_id, review_cycle) => {
+    try {
+        
+      if (!employee_id || !review_cycle) {
+        throw new Error('Invalid employee_id or review_cycle');
+      }
+      
+  
+      // Fetch the latest increment record for the employee
+      const incrementRecord = await db('increment_details')
+        .select("*")
+        .where('employee_id', employee_id)
+        .andWhere('appraisal_cycle', review_cycle)
+        .first();
+  
+      if (!incrementRecord) {
+        throw new Error('No increment record found for the given review cycle');
+      }
 
-        const currentIncrement = parseFloat(currentRecord.increment);
-        const pastIncrementValue = parseFloat(pastIncrement.increment);
-
-        // Calculate weighted increment
-        const weightedIncrement = (pastIncrementValue * 0.33334) + (currentIncrement * 0.66667);
-        return weightedIncrement.toFixed(2);
-
-    }catch(err){
-        throw new Error('Error fetching weighted increment');
+  
+      // Extract the increment year (last 4 digits)
+      const incrementYearMatch = incrementRecord.appraisal_cycle.match(/\d{4}$/);
+      if (!incrementYearMatch) {
+        throw new Error('Invalid increment review cycle format');
+      }
+      const incrementYear = parseInt(incrementYearMatch[0]); // e.g., 2024
+  
+      // Fetch the most recent past bonus where the ending year is LESS THAN the current increment year
+      const pastBonusRecord = await db('bonus_details')
+        .select("*")
+        .where('employee_id', employee_id)
+        .andWhereRaw(`CAST(RIGHT(review_cycle, 4) AS INT) < ?`, [incrementYear])
+        .orderByRaw(`CAST(RIGHT(review_cycle, 4) AS INT) DESC`)
+        .first();
+  
+      if (!pastBonusRecord || !pastBonusRecord.bonus) {
+        return parseFloat(incrementRecord.increment).toFixed(2); // Return only the current increment if no past bonus exists
+      }
+  
+      const currentIncrement = parseFloat(incrementRecord.increment);
+      const pastBonus = parseFloat(pastBonusRecord.bonus);
+  
+      // Calculate weighted increment
+      const weightedIncrement = (pastBonus * 0.33334) + (currentIncrement * 0.66667);
+      return weightedIncrement.toFixed(2);
+  
+    } catch (err) {
+      console.error('Error in getWeightedIncrement:', err);
+      throw new Error('Error fetching weighted increment');
     }
-}
+  };
+  
 
 
 const getIncrementDataByReviewCycle = async(employeeID,reviewCycle)=>{
@@ -309,9 +357,9 @@ const getIncrementDataByReviewCycle = async(employeeID,reviewCycle)=>{
     }
 }
 
-const getHistoricalData = async (emplyeeName)=>{
+const getHistoricalData = async (emplyeeName,sortBy,sortOrder)=>{
     try{
-        const historicalData = await db('historical_data').select("*").where('employee', emplyeeName);
+        const historicalData = await db('historical_data').select("*").where('employee', emplyeeName).orderBy(sortBy,sortOrder)
         return historicalData;
     }catch(err){
         console.log(err)
@@ -346,5 +394,6 @@ module.exports = {
     updateNormalizedRatings,
     getIncrementDataByReviewCycle,
     getHistoricalData,
-    getAllInrementData
+    getAllInrementData,
+    getWeightedIncrement
 }

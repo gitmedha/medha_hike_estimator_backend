@@ -1,24 +1,48 @@
 const db = require('../config/db');
 
-const getBonus = async(offset,limit,sortBy,sortByOrder)=>{
-    try{
-        const bonusData = await db('bonus_details')
-       .select("*")
-       .offset(offset)
-       .limit(limit)
-       .orderBy(sortBy,sortByOrder);
+const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'asc') => {
+    try {
+        const bonusData = await db
+            .select("*")
+            .from(function () {
+                this.select("bd.*")
+                    .from("bonus_details as bd")
+                    .modify((queryBuilder) => {
+                        queryBuilder.whereRaw(`
+                            RIGHT(review_cycle, 4) = (
+                                SELECT MAX(RIGHT(review_cycle, 4)) 
+                                FROM bonus_details 
+                                WHERE employee_id = bd.employee_id
+                            )
+                        `);
+                    })
+                    .as("filtered_bonus"); // Alias for filtered dataset
+            })
+            .offset(offset)
+            .limit(limit)
+            .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC")
+            .modify((queryBuilder) => {
+                if (sortBy && sortByOrder) {
+                    queryBuilder.orderBy(sortBy, sortByOrder);
+                }
+            });
 
-       const totalCount = await db('bonus_details').count("* as total");
-       return {
+        // Get total count for pagination
+        const totalCountQuery = db("bonus_details").countDistinct("employee_id as total");
+
+        const totalCount = await totalCountQuery;
+
+        return {
             totalCount: totalCount[0].total,
-            data: bonusData
-       };
+            data: bonusData,
+        };
+    } catch (error) {
+        console.error(error);
+        throw new Error("Error fetching bonuses", error.message)
+    }
+};
 
-    }
-    catch(error){
-        throw new Error(error.message);
-    }
-}
+
 
 const getBonusDropdown = async (field)=>{
     try{
@@ -60,7 +84,7 @@ const createBonus = async (bonusData) => {
     }
 }
 
-const getBonusById =async (id)=>{
+const getBonusById =async (id,reviewCycle)=>{
     try {
         
       const bonusData = await db('bonus_details')
@@ -75,7 +99,8 @@ const getBonusById =async (id)=>{
           'bonus_details.employee_id',
           'employee_details.employee_id'
         )
-        .where('bonus_details.employee_id', id);
+        .where('bonus_details.employee_id', id)
+        .andWhere('bonus_details.review_cycle',reviewCycle)
       return bonusData;
     } catch (err) {
       console.error(err);
@@ -117,7 +142,7 @@ const insertBulkData = async(data,review_cycle)=>{
                 employee_id: data.id,
                 full_name: data.name,
                 kra: parseFloat(parseFloat(data.kra).toFixed(1)),
-                compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
+                compentency: parseFloat(parseFloat(data.compentency).toFixed(1)),
                 average: parseFloat(parseFloat(data.average).toFixed(1)),
                 review_cycle: review_cycle,
                 manager: data.manager,
@@ -149,15 +174,15 @@ const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
     }
 }
 
-const getAllRatings = async ()=>{
+const getAllRatings = async (reviewCycle)=>{
     try{
         const allRatings = await db('bonus_details')
         .select('average')
-        // .andWhere('appraisal_cycle',reviewCycle);
+        .where('review_cycle',reviewCycle);
         const allRatingsList = allRatings.map(rating => parseFloat(rating.average));
         return allRatingsList;
     }catch(err){
-        throw new Error('Error fetching all ratings');
+        throw new Error('Error fetching all ratings',err);
     }
 }
 
@@ -193,33 +218,35 @@ const updateNormalizedRating = async(id,reviewCycle,ratings) => {
     }
 }
 
-const calculateBonus = async (normalizedRating,id,reviewCycle)=>{
-    try { 
-      const result = await db('bonus_measurements')
-      .select('ratings', 'bonus')
-      .where('ratings', '>=', normalizedRating)
-      .orderBy('ratings', 'asc')
-      .first(); 
+const calculateBonus = async (normalizedRating, id, reviewCycle) => {
+    try {
+        const result = await db('bonus_measurements')
+            .select('ratings', 'bonus')
+            .where('ratings', '>=', normalizedRating)
+            .first();
 
-    if (result) {
-      await db('bonus_details')
-      .where('employee_id', id)
-      .andWhere('review_cycle', reviewCycle)
-      .update('bonus', result.bonus);
-      return result.bonus;
-    }
+        if (result) {
+            await db('bonus_details')
+                .where('employee_id', id)
+                .andWhere('review_cycle', reviewCycle)
+                .update('bonus', result.bonus);
 
-    return null;
-        
+            return result.bonus;
+        }
+
+        return null;
+
     } catch (error) {
         throw new Error("Error Fetching bonus: " + error.message);
     }
-}
+};
 
 
-const getAllData = async ()=>{
+
+
+const getAllData = async (reviewCycle)=>{
     try{
-        const allData = await db('bonus_details').select("*");
+        const allData = await db('bonus_details').select("*").where('review_cycle',reviewCycle);
         return allData;
     }catch(err){
         throw new Error('Error fetching all increment data');

@@ -17,7 +17,12 @@ const {
     uploadBonusFile,
     bulkRating,
     calculateBulkBonus,
-    downloadPgToXl
+    downloadPgToXl,
+    weightedBonus,
+    bulkWeightedBonus,
+    getAllReviewCycles,
+    getAllCycles,
+    getAllBonusesByReview
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -25,7 +30,7 @@ router.get('/get_bonuses/:limit/:offset/:sortBy/:sortOrder', fetchAllBonus);
 
 // Fetch bonus data by ID
 
-router.get('/fetch-bonus/:id', fetchBonusById);
+router.get('/fetch-bonus/:id/:review_cycle', fetchBonusById);
 
 // Create new bonus data
 router.post('/create-bonus', createBonus);
@@ -69,5 +74,18 @@ router.get('/calculate_bulk_normalized_rating',bulkRating);
 router.get('/calculate_bulk_bonus',calculateBulkBonus);
 
 router.get('/download_excel', downloadPgToXl);
+
+router.post('/get_weighted_bonus',weightedBonus);
+
+router.post('/calculate_bulk_weighted_bonus',bulkWeightedBonus);
+
+router.get('/review-cycle-dropdowns/:id', getAllReviewCycles)
+
+router.get('/get_data_by_review_cycle/:id/:review_cycle',fetchBonusById);
+
+router.get('/get_review_cycles',getAllCycles);
+
+router.get('/get_bonuses_by_review',getAllBonusesByReview);
+
 
 module.exports = router;

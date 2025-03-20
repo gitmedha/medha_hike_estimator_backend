@@ -28,6 +28,7 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
         const bonusData = await getBonus(offset, limit, sortBy, sortByOrder);
         return bonusData;
     } catch(error){
+      console.log("errprint",error)
         throw new Error(`Service Error: Unable to fetch bonus data. ${error.message}`);
     }
  }
@@ -70,12 +71,15 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
  }
 
 
-const getBonusByIdService = async(id)=>{
+const getBonusByIdService = async(id,reviewCycle)=>{
     try{
         if(!id){
             throw new Error("Invalid bonus id");
         }
-        const bonusData = await getBonusById(id);
+        if(!reviewCycle){
+          throw new Error("Invalid review cycle");
+        }
+        const bonusData = await getBonusById(id,reviewCycle);
         return bonusData;
     } catch(error){
         console.error('Error in getBonusByIdService:', error.message);
@@ -127,46 +131,27 @@ const getPickLists = async ()=>{
 
  const uploadBonusData = async (req) => {
   try {
+
     const filePath = req.file.path;
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const requiredFields = {
-      id: '__EMPTY',
-      name: '__EMPTY_1',
-      kra: 'Apr - Mar 2023',
-      competency: '__EMPTY_2',
-      average: '__EMPTY_3',
-      manager: '__EMPTY_4',
-    };
-
-    const filteredDataDynamic = [];
-    for (const row of data.slice(1)) {
-      const result = {};
-      let isValid = true;
-
-      for (const [key, value] of Object.entries(requiredFields)) {
-        result[key] = row[value];
-
-        if (!result[key]) {
-          isValid = false;
-        }
-      }
-
-      if (isValid) {
-        filteredDataDynamic.push(result);
-      }
-
-      if (result.id === "M0333") {
-        break;
-      }
+    for (let row of data){
+    const dataObj = {}
+    let employeeInfo = row.Employee.split(" ");
+    let managerInfo = row.Reviewer.split(" ");
+    dataObj.id = `${employeeInfo[0]}`;
+    dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.average = parseFloat(row['Final Score']);
+    dataObj.kra = parseFloat(row['KRA vs GOALS']);
+    dataObj.compentency = parseFloat(row.Competency);
+    
+    await insertBulkData(dataObj,row['Appraisal Cycle']);
     }
-
-    for (const row of filteredDataDynamic) {
-      await insertBulkData(row,'Apr-Mar 2023');
-    }
+    return { message: "Data uploaded and inserted successfully!" };
 
   } catch (error) {
     console.log("error",error)
@@ -234,14 +219,11 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 
 }
 
-function calculateStandardizedValue(value, mean, stdDev) {
+function calculateStandardizedValue(value, mean, stdDev, id) {
   try{
-    if (stdDev === 0) {
-      throw new Error("Standard deviation is zero, cannot standardize.");
-  }
   return (value - mean) / stdDev;
   }catch(err){
-    throw new Error("Error while calculating standardized value: "+ error.message);
+    throw new Error("Error while calculating standardized value: ", err.message);
   }
 
 }
@@ -258,12 +240,13 @@ const calculateBonusRating = async (data)=>{
           //population standard deviation for the all reportees
     
           const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
-        
-          const allRatings = await getAllRatings();
+          console.log("STDEVP",STDEVP, "employeeId",employeeId)
+          const allRatings = await getAllRatings(reviewCycle);
           
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+
           const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-          const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+          const normalizedRating = await calculateStandardizedValue(ratings,mean,std,employeeId);
           return parseFloat(normalizedRating.toFixed(2));
         }
         else {
@@ -272,7 +255,7 @@ const calculateBonusRating = async (data)=>{
         
       } catch (error) {
         console.log(error)
-        throw new Error("Error while calculating normalized rating "+ error.message);
+        throw new Error("Error while calculating normalized rating ", error.message);
       }
 }
 
@@ -300,9 +283,9 @@ const calculateBonusPercentage = async(ratings,id,reviewCycle) => {
 }
 
 
-const BulkBonusRating = async()=>{
+const BulkBonusRating = async(reviewCycle)=>{
   try {
-    const allData = await getAllData();
+    const allData = await getAllData(reviewCycle);
     allData.forEach(async bonusData=>{
       
       let data={};
@@ -321,9 +304,9 @@ const BulkBonusRating = async()=>{
 
 };
 
-const BulkBonus = async()=>{
+const BulkBonus = async(reviewCycle)=>{
   try {
-    const allData = await getAllData();
+    const allData = await getAllData(reviewCycle);
     allData.forEach(async bonusData=>{
       if(bonusData.normalized_ratings && !bonusData.bonus ){
       const bonus = await calculateBonusPercentage(bonusData.normalized_ratings,bonusData.employee_id,bonusData.review_cycle);
@@ -336,6 +319,70 @@ const BulkBonus = async()=>{
     throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
   }
 
+}
+
+
+const getWeightedBonus = async (employee_id, review_cycle) => {
+  try {
+    if (!employee_id || !review_cycle) {
+      throw new Error('Invalid employee_id or review_cycle');
+    }
+
+    // Fetch the latest bonus record for the employee
+    const bonusRecord = await db('bonus_details')
+      .select("*")
+      .where('employee_id', employee_id)
+      .andWhere('review_cycle', review_cycle)
+      .first();
+
+    if (!bonusRecord) {
+      throw new Error('No bonus record found for the given review cycle');
+    }
+
+    const bonusYearMatch = bonusRecord.review_cycle.match(/\d{4}$/);
+    if (!bonusYearMatch) {
+      throw new Error('Invalid bonus review cycle format');
+    }
+    const bonusYear = parseInt(bonusYearMatch[0]);
+
+    const pastIncrement = await db('increment_details')
+    .select("*")
+    .where('employee_id', employee_id)
+    .andWhereRaw(`CAST(RIGHT(appraisal_cycle, 4) AS INT) = ?`, [bonusYear]) // Extract the last 4 characters and cast to INT
+    .first();
+  
+    if (!pastIncrement || !pastIncrement.increment) {
+      return parseFloat(bonusRecord.bonus).toFixed(2);
+    }
+
+    const currentBonus = parseFloat(bonusRecord.bonus);
+    const pastIncrementValue = parseFloat(pastIncrement.increment);
+
+    // Calculate weighted bonus
+    const weightedBonus = (pastIncrementValue * 0.33334) + (currentBonus * 0.66667);
+    return weightedBonus.toFixed(2);
+
+  } catch (err) {
+    console.error('Error in getWeightedBonus:', err);
+    throw new Error('Error fetching weighted bonus');
+  }
+};
+
+
+const calculateBulkWeightedBonus = async (reviewCycle)=>{
+  try{
+    const allData = await getAllData(reviewCycle);
+    allData.forEach(async bonusData=>{
+      if(bonusData.bonus){
+      const weightedBonus = await getWeightedBonus(bonusData.employee_id,bonusData.review_cycle);
+      await db('bonus_details').update({ weighted_bonus: parseFloat(weightedBonus)}).where('id',bonusData.id);
+      }
+    })
+
+    return allData;
+  } catch (error) {
+    throw new Error(`Service Error: Unable to fetch bulk normalized ratings. ${error.message}`);
+  }
 }
 
 
@@ -352,5 +399,7 @@ module.exports = {
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,
-    BulkBonus
+    BulkBonus,
+    getWeightedBonus,
+    calculateBulkWeightedBonus
 }

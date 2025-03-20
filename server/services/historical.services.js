@@ -112,56 +112,28 @@ const uploadExcelFile = async (req) => {
 
     const filePath = req.file.path;
     const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[2];
+    const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
-const transformedData = [];
-let currentGroup = null;
 
-data.forEach((row) => {
-  if (row.__EMPTY && row.__EMPTY.includes('-')) {
-    // Handle date range row
-    if (currentGroup) {
-      transformedData.push(currentGroup);
+    for (let row of data){
+    const dataObj = {}
+    let employeeInfo = row.Employee.split(" ");
+    let managerInfo = row.Reviewer.split(" ");
+    let duration = row['Appraisal Cycle'].split(" ");
+    let start_month = duration[0];
+    let end_month = duration[1];
+    dataObj.employee_id = `${employeeInfo[0]}`;
+    dataObj.employee = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    dataObj.reviewer = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.final_score = parseFloat(row['Final Score']);
+    dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
+    dataObj.competency = parseFloat(row.Competency);
+    dataObj.start_month = start_month;
+    dataObj.ending_month = end_month;
+
+    await db("historical_data").insert(dataObj);
     }
-    const [start, end] = row.__EMPTY.split('-').map((item) => item.trim());
-    currentGroup = {
-      start_month: start,
-      end_month: end,
-      data: []
-    };
-  } else if (currentGroup && row.__EMPTY_1) {
-    // Handle data row
-    currentGroup.data.push({
-      employee: row.__EMPTY,
-      reviewer: row.__EMPTY_1,
-      kra_vs_goals: row.__EMPTY_2,
-      competency: row.__EMPTY_3,
-      final_score: row.__EMPTY_4
-    });
-  }
-});
-
-// Add the last group
-if (currentGroup) {
-  transformedData.push(currentGroup);
-}
-
-for (const group of transformedData) {
-  for (const entry of group.data) {
-    await db("historical_data").insert({
-      start_month: group.start_month,
-      ending_month: group.end_month,
-      employee: entry.employee,
-      reviewer: entry.reviewer,
-      kra_vs_goals: parseFloat(entry.__EMPTY_2) ,
-      competency: parseFloat(entry.__EMPTY_3) , 
-      final_score: parseFloat(entry.__EMPTY_4)
-    });
-  }
-}
-    console.log("Data inserted successfully");
-
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {
     console.error(err);

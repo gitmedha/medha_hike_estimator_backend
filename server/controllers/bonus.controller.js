@@ -11,8 +11,12 @@ const {
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,
-    BulkBonus
+    BulkBonus,
+    getWeightedBonus,
+    calculateBulkWeightedBonus
 } = require("../services/bonus.services");
+
+const db = require("../config/db");
 
 const {updateNormalizedRating} = require("../models/bonus.model");
 const { downloadExcel} = require('../utils/downloadExcel');
@@ -21,6 +25,7 @@ const { downloadExcel} = require('../utils/downloadExcel');
 const fetchAllBonus = async(req,res)=>{
     try {
         const {offset,limit,sortBy,sortOrder} = req.params;
+        
         const result = await fetchAllBonusService(Number(offset),Number(limit),sortBy,sortOrder);
         return res.status(200).json(result);
     } catch (error) {
@@ -29,9 +34,9 @@ const fetchAllBonus = async(req,res)=>{
 }
 
 const fetchBonusById = async(req,res)=>{
-    const {id} = req.params;
+    const {id,review_cycle} = req.params;
     try {
-        const result = await getBonusByIdService(id);
+        const result = await getBonusByIdService(id,review_cycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})
@@ -143,7 +148,8 @@ const uploadBonusFile = async(req,res)=>{
 
 const bulkRating = async(req,res)=>{
     try {
-        const result = await BulkBonusRating();
+        const {reviewCycle} = req.query;
+        const result = await BulkBonusRating(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -152,7 +158,8 @@ const bulkRating = async(req,res)=>{
 
 const calculateBulkBonus = async(req,res) => {
     try {
-        const result = await BulkBonus();
+        const {reviewCycle} = req.query;
+        const result = await BulkBonus(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -166,7 +173,69 @@ const downloadPgToXl = async (req,res)=>{
       res.status(500).json({error: 'Error downloading excel file', details: error.message});
     }
   }
- 
+
+const weightedBonus = async(req,res)=>{
+    try {
+        const { employeeId } = req.body;
+        const { reviewCycle} = req.query;
+        const result = await getWeightedBonus(employeeId,reviewCycle);
+        if (isNaN(parseFloat(result))) {
+            return res.status(404).json({ message: 'Weighted bonus not found' });
+        }
+        await db('bonus_details').where({employee_id: employeeId, review_cycle: reviewCycle}).update({weighted_bonus: parseFloat(result)});
+       
+        return res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const bulkWeightedBonus= async (req,res)=>{
+    try {
+        const {reviewCycle} = req.body;
+        const result = await calculateBulkWeightedBonus(reviewCycle);
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const getAllReviewCycles = async(req,res)=>{
+    const {id} = req.params;
+    try {
+        const result = await db('bonus_details').select('review_cycle').where('employee_id',id);
+        const picklistArray = result.map(cycle=>({label:cycle.review_cycle, value:cycle.review_cycle}));
+        return res.status(200).json(picklistArray);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const getAllCycles = async(req,res)=>{
+    try {
+        const result = await db('bonus_details').select('review_cycle').distinct();
+        const picklistArray = result.map(cycle=>({label:cycle.review_cycle, value:cycle.review_cycle}));
+        return res.status(200).json(picklistArray);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
+
+const getAllBonusesByReview = async(req,res)=>{
+    const {pageSize,pageIndex,sortBy,sortOrder,reviewCycle} = req.query;
+    try {
+        const result = await db('bonus_details').where({review_cycle:reviewCycle}).orderBy(sortBy,sortOrder).limit(pageSize).offset(pageIndex * pageSize);
+        const totalCount = await db('bonus_details').where({review_cycle:reviewCycle}).count();
+        return res.status(200).json({
+            data: result,
+            totalCount: Number(totalCount[0].count)
+        });
+
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
 module.exports ={
     fetchAllBonus,
     fetchBonusById,
@@ -183,5 +252,10 @@ module.exports ={
     bulkRating,
     calculateBulkBonus,
     calculateBulkBonus,
-    downloadPgToXl
+    downloadPgToXl,
+    weightedBonus,
+    bulkWeightedBonus,
+    getAllReviewCycles,
+    getAllCycles,
+    getAllBonusesByReview
 }
