@@ -148,7 +148,8 @@ const uploadBonusFile = async(req,res)=>{
 
 const bulkRating = async(req,res)=>{
     try {
-        const result = await BulkBonusRating();
+        const {reviewCycle} = req.query;
+        const result = await BulkBonusRating(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -157,7 +158,8 @@ const bulkRating = async(req,res)=>{
 
 const calculateBulkBonus = async(req,res) => {
     try {
-        const result = await BulkBonus();
+        const {reviewCycle} = req.query;
+        const result = await BulkBonus(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
@@ -174,7 +176,8 @@ const downloadPgToXl = async (req,res)=>{
 
 const weightedBonus = async(req,res)=>{
     try {
-        const { employeeId, reviewCycle } = req.body;
+        const { employeeId } = req.body;
+        const { reviewCycle} = req.query;
         const result = await getWeightedBonus(employeeId,reviewCycle);
         if (isNaN(parseFloat(result))) {
             return res.status(404).json({ message: 'Weighted bonus not found' });
@@ -190,7 +193,8 @@ const weightedBonus = async(req,res)=>{
 
 const bulkWeightedBonus= async (req,res)=>{
     try {
-        const result = await calculateBulkWeightedBonus();
+        const {reviewCycle} = req.body;
+        const result = await calculateBulkWeightedBonus(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });

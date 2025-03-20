@@ -174,15 +174,15 @@ const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
     }
 }
 
-const getAllRatings = async ()=>{
+const getAllRatings = async (reviewCycle)=>{
     try{
         const allRatings = await db('bonus_details')
         .select('average')
-        // .andWhere('appraisal_cycle',reviewCycle);
+        .where('review_cycle',reviewCycle);
         const allRatingsList = allRatings.map(rating => parseFloat(rating.average));
         return allRatingsList;
     }catch(err){
-        throw new Error('Error fetching all ratings');
+        throw new Error('Error fetching all ratings',err);
     }
 }
 
@@ -244,9 +244,9 @@ const calculateBonus = async (normalizedRating, id, reviewCycle) => {
 
 
 
-const getAllData = async ()=>{
+const getAllData = async (reviewCycle)=>{
     try{
-        const allData = await db('bonus_details').select("*");
+        const allData = await db('bonus_details').select("*").where('review_cycle',reviewCycle);
         return allData;
     }catch(err){
         throw new Error('Error fetching all increment data');
