@@ -29,10 +29,10 @@ router.get('/updateEmployee', async (req, res) => {
     }
 });
 
-router.get('/createEmployee', async (req, res) => {
+router.post('/createEmployee', async (req, res) => {
     const {
         employee_id, department, experience, employee_status, first_name, last_name, current_band, gross_monthly_salary_or_fee_rs, title, date_of_joining, employee_type
-    } = req.query;
+    } = req.body;
     try {
         const employee = await db("employee_details").where({ employee_id }).first();
         if (employee) {
