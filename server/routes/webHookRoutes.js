@@ -9,13 +9,15 @@ const db = require('../config/db');
 
 router.get('/updateEmployee', async (req, res) => {
     const {
-        employee_id, department, experience, employee_status
+        employee_id, department, experience, employee_status,first_name,last_name,current_band,gross_monthly_salary_or_fee_rs, title,date_of_joining,employee_type
     } = req.query;
+    console.log(req.query, "req")
 
     try {
         const employee = await db("employee_details").where({ employee_id }).first();
         if (employee) {
-            await db("employee_details").where({ employee_id }).update({ department, experience, employee_status });
+            await db("employee_details").where({ employee_id }).update({ employee_id, department, experience, employee_status,first_name,last_name,current_band,gross_monthly_salary_or_fee_rs, title,date_of_joining,employee_type
+            });
 
             console.log(`Employee ${employee_id} updated.`);
             return res.status(200).json({ message: "Employee updated in database" });
