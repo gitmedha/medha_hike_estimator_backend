@@ -58,6 +58,10 @@ router.get('/review-cycle-dropdowns/:id', incrementController.getAllReviewCycles
 
 router.get('/get_data_by_review_cycle/:id/:review_cycle',incrementController.getIncrementDataById);
 
+router.get('/get_all_review_cycles',incrementController.getAllCycles);
+
+router.get('/get_increment_by_appraisal_cycle',incrementController.getIncrementDataByReviewCycle);
+
 
 
 

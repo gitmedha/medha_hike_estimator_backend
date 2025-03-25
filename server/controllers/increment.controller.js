@@ -245,6 +245,31 @@ const getAllReviewCycles = async(req,res)=>{
   }
 }
 
+const getAllCycles = async(req,res)=>{
+  try {
+      const result = await db('increment_details').select('appraisal_cycle').distinct().orderBy('appraisal_cycle','desc');
+      const picklistArray = result.map(cycle=>({label:cycle.appraisal_cycle, value:cycle.appraisal_cycle}));
+      return res.status(200).json(picklistArray);
+  } catch (error) {
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+}
+
+const getIncrementDataByReviewCycle = async(req,res) => {
+  const {pageSize,pageIndex,sortBy,sortOrder,reviewCycle} = req.query;
+
+  try{
+    const result = await db('increment_details').where({appraisal_cycle:reviewCycle}).orderBy(sortBy,sortOrder).limit(pageSize).offset(pageIndex * pageSize);
+    const totalCount = await db('increment_details').where({appraisal_cycle:reviewCycle}).count();
+    return res.status(200).json({
+        data: result,
+        totalCount: Number(totalCount[0].count)
+    });
+  }catch(error){
+    console.error("error",error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+}
 
 module.exports = {
     getIncrementData,
@@ -267,6 +292,8 @@ module.exports = {
     uploadExcelFile,
     downloadExcelFile,
     getBulkWeightedIncrement,
-    getAllReviewCycles
+    getAllReviewCycles,
+    getAllCycles,
+    getIncrementDataByReviewCycle
 }
 
