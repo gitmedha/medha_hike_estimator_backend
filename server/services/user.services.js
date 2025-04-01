@@ -44,9 +44,9 @@ const comparePassword = async (user,password) => {
  * @returns {object} - The registered user details
  * */
 
-const RegisterUser = async (username, password,name) => {
+const RegisterUser = async (username, password,name,isAdmin) => {
   const hashedPassword = await HashPassword(password);
-  const result = await userModel.RegisterUser(username, hashedPassword,name);
+  const result = await userModel.RegisterUser(username, hashedPassword,name,isAdmin);
   return {
     data: result.data
   };

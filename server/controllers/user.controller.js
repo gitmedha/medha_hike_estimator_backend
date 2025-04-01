@@ -39,12 +39,11 @@ console.error(error);
 
 const createUser = async(req, res) => {
   try {
-    const { name,username, password, adminUser, adminPwd} = req.body;  
+    const { name,username, password, adminUser, adminPwd, isAdmin} = req.body;  
 //validate the admin credentials
     if(adminUser && adminPwd){
       // Fetch stored admin credentials from database
       const {data} = await userModel.LoginUser(adminUser);
-      console.log("admin", data)
       if(!data.length) return res.status(401).json({ error: 'Invalid admin username' });
       const adminPassword = data[0].password;
       // Compare admin credentials with stored credentials
@@ -57,7 +56,7 @@ const createUser = async(req, res) => {
 //validate the user credentials
 
     if (!username ||!password || !name) return res.status(400).json({ error: 'Username and password are required' });
-    const result =await userServices.RegisterUser(username, password,name);
+    const result =await userServices.RegisterUser(username, password,name,isAdmin);
     const token = await userServices.generateToken(result.data[0]);
 
     res.status(201).json({ data: result.data , token:token});

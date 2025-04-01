@@ -12,6 +12,8 @@ const LoginUser = async (username) => {
       'password',
       'id',
       'designation',
+      'name',
+      'isadmin'
     ).where('username', username);
 
     console.log(user,"user")
@@ -34,13 +36,14 @@ const LoginUser = async (username) => {
  * @returns {object} - The user data
  */
 
-const RegisterUser = async (username, password,name) => {
+const RegisterUser = async (username, password,name,isAdmin) => {
     try {
         const user = await db('user_table')
            .insert({
                 "username":username,
                 "password":password,
-                "name":name
+                "name":name,
+                "isadmin":isAdmin,
             })
             .returning(['username', 'name', 'id', 'designation', 'isadmin']);
         return {
