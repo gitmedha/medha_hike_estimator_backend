@@ -68,10 +68,9 @@ const fetchIncrementDataById = async (id,review_cycle) => {
     }
   };
 
-  const searchIncrementData = async (field, value, offset, limit) => {
+  const searchIncrementData = async (field, value, offset, limit,reviewCycle) => {
     try {
-      console.log(field,value, offset, limit)
-      const result = await incrementModel.searchIncrementData(field, value, offset, limit);
+      const result = await incrementModel.searchIncrementData(field, value, offset, limit,reviewCycle);
       return result;
     } catch (err) {
       throw new Error(`Service Error: Unable to search increment data. ${err.message}`);

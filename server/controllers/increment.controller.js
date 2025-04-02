@@ -76,9 +76,9 @@ const getIncrementData = async (req, res) => {
   };
 
   const searchIncrementData = async (req, res) => {
-    const { field, value, offset, limit } = req.body;
+    const { field, value, offset, limit,reviewCycle } = req.body;
     try {
-      const result = await incrementService.searchIncrementData(field, value, Number(offset), Number(limit));
+      const result = await incrementService.searchIncrementData(field, value, Number(offset), Number(limit),reviewCycle);
       return res.status(200).json(result);
     } catch (err) {
       console.error('Error searching increment data:', err.message);

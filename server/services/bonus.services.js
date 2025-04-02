@@ -46,12 +46,12 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
     }
  }
 
- const searchBonusService = async(field,value,offset,limit)=>{
+ const searchBonusService = async(field,value,offset,limit,reviewCycle)=>{
     try{
         if(isNaN(offset) || isNaN(limit)){
             throw new Error("Invalid offset or limit");
         }
-        const bonusData = await searchBonus(field, value, offset, limit);
+        const bonusData = await searchBonus(field, value, offset, limit,reviewCycle);
         return bonusData;
     }
     catch(e){
