@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const jwt = require('jsonwebtoken');
 
 const isAdmin = async (req,res,next)=>{
     try {
@@ -11,6 +10,7 @@ const isAdmin = async (req,res,next)=>{
              return res.status(404).json({ message: "User not found." });
          }
 
+         
          if(user[0].isadmin){
              req.isAdmin = true;
               return next();
