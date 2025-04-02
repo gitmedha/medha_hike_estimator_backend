@@ -16,8 +16,6 @@ const LoginUser = async (username) => {
       'isadmin'
     ).where('username', username);
 
-    console.log(user,"user")
-
   return {
     data: user,
   };

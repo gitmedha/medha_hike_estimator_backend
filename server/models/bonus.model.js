@@ -58,9 +58,12 @@ const getBonusDropdown = async (field)=>{
     }
 }
 
-const searchBonus = async (searchField, value, offset = 0, limit = 10) => {
+const searchBonus = async (searchField, value, offset = 0, limit = 10,reviewCycle) => {
     try {
         const bonusData =  await db('bonus_details').select("*").where(`${searchField}`, `${value}`)
+        .andWhere('review_cycle',reviewCycle)
+        .offset(offset)
+        .limit(limit);
         return {
             data: bonusData,
             totalCount: bonusData.length

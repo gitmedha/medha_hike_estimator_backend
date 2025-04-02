@@ -87,9 +87,9 @@ const searchDropDown = async(req,res)=>{
 }
 
 const searchBonus = async(req,res)=>{
-    const {field, value,offset,limit} = req.body;
+    const {field, value,offset,limit,reviewCycle} = req.body;
     try {
-        const result = await searchBonusService(field, value,offset,limit);
+        const result = await searchBonusService(field, value,offset,limit,reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({message:"Internal Server Error", error: error.message})

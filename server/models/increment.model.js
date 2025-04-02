@@ -129,18 +129,20 @@ const filterIncrementData = async (fields,values,limit,offset) =>{
     }
 }
 
-const searchIncrementData = async(searchField,value,offset,limit)=>{
+const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
     try{
         const isNumeric = typeof value === 'number';
 
         const incrementData = await db('increment_details')
         .select("*")
         .where(searchField, isNumeric ? '=' : 'ilike', isNumeric ? value : `%${value}%`)
+        .andWhere('appraisal_cycle', reviewCycle)
         .offset(offset)
         .limit(limit);
 
         const totalCountResult = await db('increment_details')
         .where(searchField, isNumeric ? '=' : 'ilike', isNumeric ? value : `%${value}%`)
+        .andWhere('appraisal_cycle', reviewCycle)
         .count('* as total');
 
         const totalCount = totalCountResult[0].total;
