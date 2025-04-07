@@ -26,7 +26,7 @@ router.post('/add-filter-increment-data/:offset/:limit', incrementController.fil
 router.post('/search-increment-data', incrementController.searchIncrementData);
 
 // Route to get dropdown options for a specific field
-router.get('/search-dropdowns/:field', incrementController.getSearchDropdowns);
+router.get('/search-dropdowns/:field/:reviewCycle', incrementController.getSearchDropdowns);
 
 router.get('/get_increments_picklist', incrementController.getPickList);
 

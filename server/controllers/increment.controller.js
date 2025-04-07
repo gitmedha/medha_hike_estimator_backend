@@ -87,9 +87,9 @@ const getIncrementData = async (req, res) => {
   };
 
   const getSearchDropdowns = async (req, res) => {
-    const { field } = req.params;
+    const { field,reviewCycle } = req.params;
     try {
-      const result = await incrementService.getDropdownOptions(field);
+      const result = await incrementService.getDropdownOptions(field,reviewCycle);
       return res.status(200).json(result);
     } catch (err) {
       console.error('Error fetching dropdown options:', err.message);

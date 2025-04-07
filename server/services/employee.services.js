@@ -41,8 +41,8 @@ const getEmployeeByID = async (id)=>{
   }
 }
 
-const searchEmployees = async (searchValue,from,to,limit,size)=>{
-  const result = await employeeModel.searchEmployees(searchValue,from,to,limit,size);
+const searchEmployees = async (searchField,searchValue,limit,size)=>{
+  const result = await employeeModel.searchEmployees(searchField,searchValue,limit,size);
   return {
     data: result.data,
     total: result.totalCount

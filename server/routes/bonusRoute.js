@@ -45,7 +45,7 @@ router.delete('/delete-bonus/:id', deleteBonus);
 
 // Search Dropdown 
 
-router.get('/search-dropdown/:field',searchDropDown);
+router.get('/search-dropdown/:field/:reviewCycle',searchDropDown);
 
 //search bonus
 

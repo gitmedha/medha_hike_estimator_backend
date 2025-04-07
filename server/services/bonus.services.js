@@ -33,9 +33,9 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
     }
  }
 
- const searchDropDownService = async (field)=>{
+ const searchDropDownService = async (field,reviewCycle)=>{
     try{
-        const dropdownData = await getBonusDropdown(field);
+        const dropdownData = await getBonusDropdown(field,reviewCycle);
         const modifiedDropdown = dropdownData.map((dropdown)=>({
             label: dropdown[field],
             value: dropdown[field]
@@ -46,12 +46,12 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
     }
  }
 
- const searchBonusService = async(field,value,offset,limit,reviewCycle)=>{
+ const searchBonusService = async(field,value,reviewCycle,offset,limit)=>{
     try{
         if(isNaN(offset) || isNaN(limit)){
             throw new Error("Invalid offset or limit");
         }
-        const bonusData = await searchBonus(field, value, offset, limit,reviewCycle);
+        const bonusData = await searchBonus(field, value, reviewCycle,offset, limit);
         return bonusData;
     }
     catch(e){

@@ -44,12 +44,13 @@ const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'as
 
 
 
-const getBonusDropdown = async (field)=>{
+const getBonusDropdown = async (field,reviewCycle)=>{
     try{
         const dropDown = await db('bonus_details')
        .select(field)
        .distinct()
-       .orderBy(field, 'asc');
+         .where('review_cycle',reviewCycle)
+    .orderBy(field, 'asc');
 
         return dropDown;
     }
@@ -58,7 +59,8 @@ const getBonusDropdown = async (field)=>{
     }
 }
 
-const searchBonus = async (searchField, value, offset = 0, limit = 10,reviewCycle) => {
+const searchBonus = async (searchField, value, reviewCycle,offset = 0, limit = 10) => {
+    console.log('searchField:', searchField, 'value:', value, 'reviewCycle:', reviewCycle, 'offset:', offset, 'limit:', limit);
     try {
         const bonusData =  await db('bonus_details').select("*").where(`${searchField}`, `${value}`)
         .andWhere('review_cycle',reviewCycle)
