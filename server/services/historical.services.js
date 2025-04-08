@@ -120,7 +120,7 @@ const uploadExcelFile = async (req) => {
     const dataObj = {}
     let employeeInfo = row.Employee.split(" ");
     let managerInfo = row.Reviewer.split(" ");
-    let duration = row['Appraisal Cycle'].split(" ");
+    let duration = row['Appraisal Cycle'].split("-");
     let start_month = duration[0];
     let end_month = duration[1];
     dataObj.employee_id = `${employeeInfo[0]}`;

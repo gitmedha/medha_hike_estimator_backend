@@ -222,19 +222,25 @@ function calculateStandardizedValue(value, mean, stdDev) {
 const getNormalizedRating = async (data)=>{
   try {
     const ratings = data.ratings ? Number(data.ratings):0;
+    console.log(ratings, "ratings")
     const {reviewCycle,employeeId,managerName} = data;
+    console.log("data",data);
     if(ratings){
 
       //peer ratings for the same manager
       const peerRatings = await incrementModel.getPeerRatings(managerName, employeeId,reviewCycle);
+      console.log("peerRatings",peerRatings)
 
       //population standard deviation for the all reportees
 
       const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
+      console.log("STDEVP",STDEVP)
     
       const allRatings = await incrementModel.getAllRatings();      
       const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+      console.log("mean",mean)
       const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+      console.log("std",std);
       const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
       
       
