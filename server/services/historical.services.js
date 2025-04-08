@@ -27,8 +27,8 @@ const getHistoricDatabyID = async (id)=>{
 }
 
 
-const searchHistoric = async (searchValue,from,to,limit,size)=>{
-  const result = await historicalModel.searchHistoric(searchValue,from,to,limit,size);
+const searchHistoric = async (searchField,searchValue,limit,size)=>{
+  const result = await historicalModel.searchHistoric(searchField,searchValue,limit,size);
   return {
     data: result.data,
     total: result.totalCount

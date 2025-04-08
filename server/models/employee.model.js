@@ -46,38 +46,45 @@ const getEmployeebyID = async(id) => {
   return employee;
 }
 
-const searchEmployees = async(searchValue,from,to,limit,size)=>{
+const searchEmployees = async(searchField,searchValue,limit,size)=>{
 try {
-  const sortColumn = ['first_name', 'last_name', 'email_id', 'department', 'title', 'employee_status', 'employee_type'].includes(searchValue)
+  const sortColumn = ['first_name', 'last_name', 'email_id', 'department', 'title', 'employee_status', 'employee_type', 'employee_id'].includes(searchValue)
   ? searchValue
   : 'first_name';
 
-  if( from & to){
+  if(searchField === "date_of_joining"){
+
+    const { from, to } = searchValue;
+    employees = await db('employee_details')
+        .select("*")
+        .whereBetween('date_of_joining', [from, to])
+        .orderBy(sortColumn, 'asc')
+        .limit(limit)
+        .offset(size * limit);
+
+      totalCount = await db('employee_details')
+        .count('* as count')
+        .whereBetween('date_of_joining', [from, to])
+        .first();
+
+                          
+    return {
+      data:employees,
+      totalCount: totalCount.count
+    };
 
   }
   else {
     const employees = await db('employee_details')
                             .select("*")
-                            .where('first_name', 'like', `%${searchValue}%`)
-                            .orWhere('last_name', 'like', `%${searchValue}%`)
-                            .orWhere('email_id', 'like', `%${searchValue}%`)
-                            .orWhere('department', 'like', `%${searchValue}%`)
-                            .orWhere('title', 'like', `%${searchValue}%`)
-                            .orWhere('employee_status', 'like', `%${searchValue}%`)
-                            .orWhere('employee_type', 'like', `%${searchValue}%`)
+                            .where(searchField, `${searchValue}`)
                             .orderBy(sortColumn,'asc')
                             .limit(limit)
                             .offset(size*limit);
 
     const totalCount = await db('employee_details')
                             .count('* as count')
-                            .where('first_name', 'like', `%${searchValue}%`)
-                            .orWhere('last_name', 'like', `%${searchValue}%`)
-                            .orWhere('email_id', 'like', `%${searchValue}%`)
-                            .orWhere('department', 'like', `%${searchValue}%`)
-                            .orWhere('title', 'like', `%${searchValue}%`)
-                            .orWhere('employee_status', 'like', `%${searchValue}%`)
-                            .orWhere('employee_type', 'like', `%${searchValue}%`)
+                            .where(searchField,`${searchValue}`)
                             .first();
                         
     return {

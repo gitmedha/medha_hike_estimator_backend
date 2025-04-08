@@ -57,19 +57,9 @@ const getEmployee = async (req,res)=>{
 
 const searchEmployees = async(req, res) => {
   try {
-  let searchValue = from = to = null;
-  const { limit, size } = req.body;
-  if(req.body.searchValue){
-    searchValue = req.body.searchValue;
-  }
-  if(req.body.from){
-    from = req.body.from;
-  }
-  if(req.body.to){
-    to = req.body.to;
-  }
+  const { searchField, searchValue,limit, size } = req.body;
 
-    const result = await employeeService.searchEmployees(searchValue,from,to,limit,size);
+    const result = await employeeService.searchEmployees(searchField,searchValue,limit,size);
     res.status(200).json(result);
   } catch (error) {
     console.log(error);

@@ -37,19 +37,9 @@ const getHistoric = async (req,res)=>{
 
 const searchHistorics = async(req, res) => {
   try {
-  let searchValue = from = to = null;
-  const { limit, page } = req.body;
-  if(req.body.searchValue){
-    searchValue = req.body.searchValue;
-  }
-  if(req.body.from){
-    from = req.body.from;
-  }
-  if(req.body.to){
-    to = req.body.to;
-  }
+  const { searchField, searchValue,limit, page } = req.body;
 
-    const result = await HistoricalService.searchHistoric(searchValue,from,to,limit,page);
+    const result = await HistoricalService.searchHistoric(searchField,searchValue,limit,page);
     res.status(200).json(result);
   } catch (error) {
     console.log(error);

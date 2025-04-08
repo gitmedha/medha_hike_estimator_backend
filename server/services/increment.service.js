@@ -73,13 +73,14 @@ const fetchIncrementDataById = async (id,review_cycle) => {
       const result = await incrementModel.searchIncrementData(field, value, offset, limit,reviewCycle);
       return result;
     } catch (err) {
+      console.log(err)
       throw new Error(`Service Error: Unable to search increment data. ${err.message}`);
     }
   };
 
-  const getDropdownOptions = async (field) => {
+  const getDropdownOptions = async (field,reviewCycle) => {
     try {
-      const options = await incrementModel.getSearchDropdowns(field);
+      const options = await incrementModel.getSearchDropdowns(field,reviewCycle);
       return options.map((option) => ({
         label: option[field],
         value: option[field],

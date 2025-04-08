@@ -131,17 +131,15 @@ const filterIncrementData = async (fields,values,limit,offset) =>{
 
 const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
     try{
-        const isNumeric = typeof value === 'number';
-
         const incrementData = await db('increment_details')
         .select("*")
-        .where(searchField, isNumeric ? '=' : 'ilike', isNumeric ? value : `%${value}%`)
+        .where(searchField,`${value}`)
         .andWhere('appraisal_cycle', reviewCycle)
         .offset(offset)
         .limit(limit);
 
         const totalCountResult = await db('increment_details')
-        .where(searchField, isNumeric ? '=' : 'ilike', isNumeric ? value : `%${value}%`)
+        .where(searchField,`${value}`)
         .andWhere('appraisal_cycle', reviewCycle)
         .count('* as total');
 
@@ -153,15 +151,17 @@ const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
         };
 
     }catch(err){
+        console.log("error", err)
         throw new Error(`Error searching increment data: ${err.message}`);
     }
 }
 
-const getSearchDropdowns = async(Field) => {
+const getSearchDropdowns = async(Field,reviewCycle) => {
     try{
         const searchDropdowns = await db('increment_details')
        .select(Field)
        .distinct()
+       .where('appraisal_cycle',reviewCycle)
        .orderBy(Field, 'asc');
        return searchDropdowns;
     }catch(err){

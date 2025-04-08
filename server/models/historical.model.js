@@ -35,46 +35,27 @@ const getHistoricDatabyID = async(id) => {
   return historicData;
 }
 
-const searchHistoric = async(searchValue,from,to,limit,size)=>{
+const searchHistoric = async(searchField,searchValue,limit,size)=>{
   try {
     const sortColumn = ['employee', 'reviewer', 'kra_vs_goals', 'competency', 'final_score', 'start_month', 'ending_month','id'].includes(searchValue)
     ? searchValue
     : 'employee';
-  
-    if( from & to){
-  
-    }
-    else {
-      console.log(await db('historical_data').select("*").where('employee', searchValue))
-      const historics = await db('historical_data')
-                              .select("*")
-                              .where('employee', 'like', `%${searchValue}%`)
-                              .orWhere('reviewer', 'like', `%${searchValue}%`)
-                              .orWhere('kra_vs_goals', 'like', `%${searchValue}%`)
-                              // .orWhere('competency',`%${searchValue}%`)
-                              // .orWhere('final_score',`%${searchValue}%`)
-                              .orWhere('start_month', 'like', `%${searchValue}%`)
-                              .orWhere('ending_month', 'like', `%${searchValue}%`)
-                              .orderBy(sortColumn,'asc')
-                              .limit(limit)
-                              .offset(size*limit);
-  
-      const totalCount = await db('historical_data')
-                              .count('* as count')
-                              .where('employee', 'like', `%${searchValue}%`)
-                              .orWhere('reviewer', 'like', `%${searchValue}%`)
-                              .orWhere('kra_vs_goals', 'like', `%${searchValue}%`)
-                              // .orWhere('competency', `%${searchValue}%`)
-                              // .orWhere('final_score',`%${searchValue}%`)
-                              .orWhere('start_month', 'like', `%${searchValue}%`)
-                              .orWhere('ending_month', 'like', `%${searchValue}%`)
-                              .first();
-                          
-      return {
-        data:historics,
-        totalCount: totalCount.count
-      };
-    }
+    const historics = await db('historical_data')
+    .select("*")
+    .where(`${searchField}`,`${searchValue}`)
+    .orderBy(sortColumn,'asc')
+    .limit(limit)
+    .offset(size*limit);
+
+const totalCount = await db('historical_data')
+    .count('* as count')
+    .where(`${searchField}`,`${searchValue}`)
+    .first();
+
+return {
+data:historics,
+totalCount: totalCount.count
+};
   
   } catch (error) {
     console.log(error)
