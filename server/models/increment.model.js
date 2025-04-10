@@ -260,6 +260,34 @@ const getAllRatings = async (reviewCycle)=>{
     }
 }
 
+const isOlderEmployee = async (id) => {
+    try {
+        const employee = await db('employee_details').where('employee_id', id).first();
+        if (!employee) {
+            throw new Error('Employee not found');
+        }
+
+        const currentDate = new Date();
+        const hireDate = new Date(employee.date_of_joining);
+
+        // Calculate the difference in years
+        let diffYears = currentDate.getFullYear() - hireDate.getFullYear();
+
+        // Adjust if the employee hasn't reached the anniversary yet this year
+        const hasAnniversaryPassed =
+            currentDate.getMonth() > hireDate.getMonth() ||
+            (currentDate.getMonth() === hireDate.getMonth() && currentDate.getDate() >= hireDate.getDate());
+
+        if (!hasAnniversaryPassed) {
+            diffYears--;
+        }
+
+        return diffYears >= 3;
+    } catch (error) {
+        return error.message;
+    }
+};
+
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
     try {
       const result = await db('increment_measurements')
@@ -269,12 +297,17 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .first(); 
 
       if (result) {
+        const isOlder = await isOlderEmployee(employeeId);
+        if (isOlder) {  
+            result.increment_percentage += 10; // Add 10% for employees with more than 3 years of experience
+        }
         await db('increment_details')
         .where('employee_id', employeeId)
         .andWhere('appraisal_cycle', reviewCycle)
         .update('increment', result.increment_percentage);
         return result.increment_percentage;
       }
+
   
       return null;
     } catch (error) {
