@@ -203,9 +203,10 @@ const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
             throw new Error('Manager name is required');
         }
         const peerRatings = await db('increment_details')
-        .select('average').where('manager', managerName)
+        .select('average','employee_id', 'appraisal_cycle').where('manager', managerName)
         .andWhere('appraisal_cycle',reviewCycle)
         .andWhereNot('employee_id',employeeID);
+        console.log(peerRatings)
         const peerRatingsList = peerRatings.map(rating => parseFloat(rating.average));
         return peerRatingsList;
 
@@ -215,21 +216,43 @@ const getPeerRatings = async (managerName,employeeID,reviewCycle)=>{
     }
 }
 
-const getHistoricalRatings = async (managerName)=>{
+const getHistoricalRatings = async (managerName,reviewCycle)=>{
+    if (!managerName) {
+        throw new Error('Manager name is required');
+    }
+    if (!reviewCycle) {
+        throw new Error('Review cycle is required');
+    }
+
+    const newDate = reviewCycle.split('-')[1];
+
+
+const date = new Date('01 ' + newDate);
+const formatted = date.toISOString().split('T')[0]; // '2022-03-01'
+
     try{
-        const historicalRatings = await db('historical_data').select('final_score').where('reviewer',managerName);
+        const historicalRatings = await db('historical_data')
+        .select('final_score')
+        .where('reviewer', managerName)
+        .andWhere('review_cycle', reviewCycle)
+        .andWhereRaw(
+          "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
+          [formatted]
+        );
+  
         const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
+        
         return historicalRatingList;
     }catch(err){
         throw new Error('Error fetching historical ratings');
     }
 }
 
-const getAllRatings = async ()=>{
+const getAllRatings = async (reviewCycle)=>{
     try{
         const allRatings = await db('increment_details')
         .select('average')
-        // .andWhere('appraisal_cycle',reviewCycle);
+        .andWhere('appraisal_cycle',reviewCycle);
         const allRatingsList = allRatings.map(rating => parseFloat(rating.average));
         return allRatingsList;
     }catch(err){
@@ -238,7 +261,6 @@ const getAllRatings = async ()=>{
 }
 
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
-    console.log(normalizedRating)
     try {
       const result = await db('increment_measurements')
         .select('increment_range', 'increment_percentage')
@@ -274,26 +296,6 @@ const updateNormalizedRatings = async (employeeID,rating,reviewCycle) =>{
         throw new Error('Error updating normalized rating');
     }
 }
-
-function findLesserYearData(records, currentAppraisalCycle) {
-    try{
-        
-    const currentYear = parseInt(currentAppraisalCycle.split(' ')[1]);
-    for (const record of records) {
-      const year = parseInt(record.appraisal_cycle.split(' ')[1]);
-    
-      if (year < currentYear) {
-        return record;
-      }
-    }
-  
-    return null;
-
-    }catch(e){
-        console.log(e);
-        throw new Error('Error finding lesser year data');
-    }
-  }
 
   
   const getWeightedIncrement = async (employee_id, review_cycle) => {
@@ -369,9 +371,9 @@ const getHistoricalData = async (emplyeeName,sortBy,sortOrder)=>{
     }
 }
 
-const getAllInrementData = async ()=>{
+const getAllInrementData = async (reviewCycle)=>{
     try{
-        const allIncrementData = await db('increment_details').select("*");
+        const allIncrementData = await db('increment_details').select("*").where('appraisal_cycle', reviewCycle);
         return allIncrementData;
     }catch(err){
         throw new Error('Error fetching all increment data');

@@ -172,11 +172,11 @@ const fetchIncrementDataById = async (id,review_cycle) => {
     }
 }
 
-const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle)=>{
   
   if(!STDEVP){
     //historical data for the same manager
-    const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
+    const historicalRatings = await incrementModel.getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
@@ -188,14 +188,13 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
     }
   }
   else {
-  console.log("All average")
    return calculateAverage([ratings,...peerRatings]);
   }
 }
 
-const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle)=>{
   if(!STDEVP){
-    const historicalRatings = await incrementModel.getHistoricalRatings(managerName);
+    const historicalRatings = await incrementModel.getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings.length){
       return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
     }else {
@@ -222,26 +221,20 @@ function calculateStandardizedValue(value, mean, stdDev) {
 const getNormalizedRating = async (data)=>{
   try {
     const ratings = data.ratings ? Number(data.ratings):0;
-    console.log(ratings, "ratings")
     const {reviewCycle,employeeId,managerName} = data;
-    console.log("data",data);
     if(ratings){
 
       //peer ratings for the same manager
       const peerRatings = await incrementModel.getPeerRatings(managerName, employeeId,reviewCycle);
-      console.log("peerRatings",peerRatings)
 
       //population standard deviation for the all reportees
 
       const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
-      console.log("STDEVP",STDEVP)
     
-      const allRatings = await incrementModel.getAllRatings();      
-      const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-      console.log("mean",mean)
-      const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-      console.log("std",std);
-      const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+      const allRatings = await incrementModel.getAllRatings(reviewCycle);      
+      const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
+      const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
+      const normalizedRating = await calculateStandardizedValue(ratings,mean,std,reviewCycle);
       
       
       return parseFloat(normalizedRating.toFixed(2));
@@ -294,9 +287,9 @@ const getHistoricalData = async (employeeName,sortBy,sortOrder)=>{
   }
 }
 
-const getBulkNormalizedRatings = async()=>{
+const getBulkNormalizedRatings = async(reviewCycle)=>{
   try {
-    const allIncrementData = await incrementModel.getAllInrementData();
+    const allIncrementData = await incrementModel.getAllInrementData(reviewCycle);
     allIncrementData.forEach(async incrementData=>{
       
       let data={};
@@ -345,14 +338,15 @@ const uploadExcelFile = async (req) => {
     for (let row of data){
     const dataObj = {}
     let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer.split(" ");
+    let managerInfo = row.Reviewer;
     dataObj.employee_id = `${employeeInfo[0]}`;
     dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.manager = `${managerInfo}`;
     dataObj.average = parseFloat(row['Final Score']);
     dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
     dataObj.compentency = parseFloat(row.Competency);
-    dataObj.appraisal_cycle = row['Appraisal Cycle'] ? row['Appraisal Cycle'] : "April-Sep 2024";
+    dataObj.appraisal_cycle = row['Appraisal Cycle'];
+  
 
     await db('increment_details').insert(dataObj);
     }
