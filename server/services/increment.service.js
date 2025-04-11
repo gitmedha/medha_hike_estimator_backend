@@ -338,10 +338,11 @@ const uploadExcelFile = async (req) => {
     for (let row of data){
     const dataObj = {}
     let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer;
+    let managerInfo = row.Reviewer.split(" ");
+
     dataObj.employee_id = `${employeeInfo[0]}`;
     dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo}`;
+    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
     dataObj.average = parseFloat(row['Final Score']);
     dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
     dataObj.compentency = parseFloat(row.Competency);
