@@ -191,9 +191,28 @@ const getAllRatings = async (reviewCycle)=>{
     }
 }
 
-const getHistoricalRatings = async (managerName)=>{
+const getHistoricalRatings = async (managerName,reviewCycle)=>{
+    if (!managerName) {
+        throw new Error('Manager name is required');
+    }
+    if (!reviewCycle) {
+        throw new Error('Review cycle is required');
+    }
+
+    const newDate = reviewCycle.split('-')[1];
+
+    const date = new Date('01 ' + newDate);
+    const formatted = date.toISOString().split('T')[0]; 
+
     try{
-        const historicalRatings = await db('historical_data').select('final_score').where('reviewer',managerName);
+        const historicalRatings = await db('historical_data')
+        .select('final_score')
+        .where('reviewer', managerName)
+        .andWhere('review_cycle', reviewCycle)
+        .andWhereRaw(
+          "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
+          [formatted]
+        );
         const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
         return historicalRatingList;
     }catch(err){

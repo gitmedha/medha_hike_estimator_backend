@@ -43,60 +43,83 @@ const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
 
 const getEmployeebyID = async(id) => {
   const employee = await db('employee_details').select("*").where('id', id);
+  const experienceInMonths = Number(employee[0].experience);
+  const experienceInYears = (experienceInMonths / 12).toFixed(1);
+  employee[0].experience = experienceInYears;
+
   return employee;
 }
 
-const searchEmployees = async(searchField,searchValue,limit,size)=>{
-try {
-  const sortColumn = ['first_name', 'last_name', 'email_id', 'department', 'title', 'employee_status', 'employee_type', 'employee_id'].includes(searchValue)
-  ? searchValue
-  : 'first_name';
+const searchEmployees = async (searchField, searchValue, limit, size) => {
+  try {
+    const sortColumn = [
+      'first_name',
+      'last_name',
+      'email_id',
+      'department',
+      'title',
+      'employee_status',
+      'employee_type',
+      'employee_id'
+    ].includes(searchValue)
+      ? searchValue
+      : 'first_name';
 
-  if(searchField === "date_of_joining"){
+    if (searchField === "date_of_joining") {
+      const { from, to } = searchValue;
 
-    const { from, to } = searchValue;
-    employees = await db('employee_details')
-        .select("*")
+      const employees = await db('employee_details')
+        .select([
+          '*',
+          db.raw(`TO_CHAR(date_of_joining, 'YYYY-MM-DD') AS date_of_joining`)
+        ])
         .whereBetween('date_of_joining', [from, to])
         .orderBy(sortColumn, 'asc')
         .limit(limit)
         .offset(size * limit);
 
-      totalCount = await db('employee_details')
+      const totalCount = await db('employee_details')
         .count('* as count')
         .whereBetween('date_of_joining', [from, to])
         .first();
 
-                          
-    return {
-      data:employees,
-      totalCount: totalCount.count
-    };
+      return {
+        data: employees,
+        totalCount: totalCount.count
+      };
+    } else {
+      let Field = searchField;
+      if (searchField === "Status") {
+        Field = "employee_status";
+      } else if (searchField === "Type") {
+        Field = "employee_type";
+      }
 
+      const employees = await db('employee_details')
+        .select([
+          '*',
+          db.raw(`TO_CHAR(date_of_joining, 'YYYY-MM-DD') AS date_of_joining`)
+        ])
+        .where(Field, `${searchValue}`)
+        .orderBy(sortColumn, 'asc')
+        .limit(limit)
+        .offset(size * limit);
+
+      const totalCount = await db('employee_details')
+        .count('* as count')
+        .where(Field, `${searchValue}`)
+        .first();
+
+      return {
+        data: employees,
+        totalCount: totalCount.count
+      };
+    }
+
+  } catch (error) {
+    throw new Error(error.message);
   }
-  else {
-    const employees = await db('employee_details')
-                            .select("*")
-                            .where(searchField, `${searchValue}`)
-                            .orderBy(sortColumn,'asc')
-                            .limit(limit)
-                            .offset(size*limit);
-
-    const totalCount = await db('employee_details')
-                            .count('* as count')
-                            .where(searchField,`${searchValue}`)
-                            .first();
-                        
-    return {
-      data:employees,
-      totalCount: totalCount.count
-    };
-  }
-
-} catch (error) {
-  throw new Error(error.message);
-}
-}
+};
 
 const searchPickList = async (dropField)=>{
 

@@ -185,11 +185,11 @@ const calculateAverage =(values)=>{
     }
 }
 
-const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle)=>{
   
   if(!STDEVP){
     //historical data for the same manager
-    const historicalRatings = await getHistoricalRatings(managerName);
+    const historicalRatings = await getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings){
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
@@ -205,9 +205,9 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
   }
 }
 
-const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName)=>{
+const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle)=>{
   if(!STDEVP){
-    const historicalRatings = await getHistoricalRatings(managerName);
+    const historicalRatings = await getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings.length){
       return calculateStandardDeviation([ratings,...peerRatings,...historicalRatings]);
     }else {
@@ -219,7 +219,7 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 
 }
 
-function calculateStandardizedValue(value, mean, stdDev, id) {
+function calculateStandardizedValue(value, mean, stdDev) {
   try{
   return (value - mean) / stdDev;
   }catch(err){
@@ -240,13 +240,12 @@ const calculateBonusRating = async (data)=>{
           //population standard deviation for the all reportees
     
           const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
-          console.log("STDEVP",STDEVP, "employeeId",employeeId)
           const allRatings = await getAllRatings(reviewCycle);
           
-          const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
+          const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
 
-          const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName);
-          const normalizedRating = await calculateStandardizedValue(ratings,mean,std,employeeId);
+          const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
+          const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
           return parseFloat(normalizedRating.toFixed(2));
         }
         else {
@@ -350,7 +349,6 @@ const getWeightedBonus = async (employee_id, review_cycle) => {
     .where('employee_id', employee_id)
     .andWhereRaw(`CAST(RIGHT(appraisal_cycle, 4) AS INT) = ?`, [bonusYear]) // Extract the last 4 characters and cast to INT
     .first();
-  
     if (!pastIncrement || !pastIncrement.increment) {
       return parseFloat(bonusRecord.bonus).toFixed(2);
     }

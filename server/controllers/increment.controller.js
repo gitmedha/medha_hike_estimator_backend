@@ -189,7 +189,8 @@ const getHistoricalData = async(req,res)=>{
 
 const getBulkNormalizedRatings = async(req, res) => {
   try {
-    const result = await incrementService.getBulkNormalizedRatings();
+    const {reviewCycle} = req.query;
+    const result = await incrementService.getBulkNormalizedRatings(reviewCycle);
     return res.status(200).json(result);
     
   } catch (error) {
