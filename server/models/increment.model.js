@@ -269,6 +269,8 @@ const isOlderEmployee = async (id) => {
 
         const currentDate = new Date();
         const hireDate = new Date(employee.date_of_joining);
+        console.log("employee.date_of_joining",employee.date_of_joining)
+    
 
         // Calculate the difference in years
         let diffYears = currentDate.getFullYear() - hireDate.getFullYear();
@@ -282,7 +284,7 @@ const isOlderEmployee = async (id) => {
             diffYears--;
         }
 
-        return diffYears >= 3;
+        return diffYears == 3;
     } catch (error) {
         return error.message;
     }
@@ -299,7 +301,9 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
       if (result) {
         const isOlder = await isOlderEmployee(employeeId);
         if (isOlder) {  
-            result.increment_percentage += 10; // Add 10% for employees with more than 3 years of experience
+            const percentage = parseFloat(result.increment_percentage);
+            const updatedPercentage = percentage + 10;
+            result.increment_percentage = updatedPercentage; // Add 10% for employees with more than 3 years of experience
         }
         await db('increment_details')
         .where('employee_id', employeeId)
