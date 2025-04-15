@@ -208,9 +208,6 @@ const standardDevCalculation = async(STDEVP,ratings,peerRatings,allRatings,manag
 
 function calculateStandardizedValue(value, mean, stdDev) {
   try{
-    if (stdDev === 0) {
-      throw new Error("Standard deviation is zero, cannot standardize.");
-  }
   return (value - mean) / stdDev;
   }catch(err){
     throw new Error("Error while calculating standardized value: "+ err.message);
@@ -310,9 +307,9 @@ const getBulkNormalizedRatings = async(reviewCycle)=>{
 
 };
 
-const getBulkIncrement = async ()=>{
+const getBulkIncrement = async (reviewCycle)=>{
   try {
-    const allIncrementData = await incrementModel.getAllInrementData();
+    const allIncrementData = await incrementModel.getAllInrementData(reviewCycle);
     allIncrementData.forEach(async incrementData=>{
     if(incrementData.normalize_rating && !incrementData.increment){
       const increment = await getIncrement(incrementData.normalize_rating,incrementData.employee_id,incrementData.appraisal_cycle);
@@ -380,9 +377,9 @@ const uploadExcelFile = async (req) => {
   }
 };
 
-const getBulkWeightedIncrement = async ()=>{
+const getBulkWeightedIncrement = async (reviewCycle)=>{
   try {
-    const allIncrementData = await incrementModel.getAllInrementData();
+    const allIncrementData = await incrementModel.getAllInrementData(reviewCycle);
     allIncrementData.forEach(async incrementData=>{
     if(incrementData.increment){
       const weightedIncrement = await incrementModel.getWeightedIncrement(incrementData.employee_id,incrementData.appraisal_cycle);

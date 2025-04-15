@@ -409,9 +409,11 @@ const getHistoricalData = async (emplyeeName,sortBy,sortOrder)=>{
 
 const getAllInrementData = async (reviewCycle)=>{
     try{
+        console.log("reviewCycle",reviewCycle)
         const allIncrementData = await db('increment_details').select("*").where('appraisal_cycle', reviewCycle);
         return allIncrementData;
     }catch(err){
+        console.log(err)
         throw new Error('Error fetching all increment data');
     }
 }
