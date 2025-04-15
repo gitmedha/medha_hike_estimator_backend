@@ -200,7 +200,8 @@ const getBulkNormalizedRatings = async(req, res) => {
 
 const getBulkIncrement = async (req,res)=>{
   try {
-    const result = await incrementService.getBulkIncrement();
+    const {reviewCycle} = req.query;
+    const result = await incrementService.getBulkIncrement(reviewCycle);
     return res.status(200).json(result);
   } catch (err) {
     console.error('Error fetching bulk increment:', err.message);
@@ -225,8 +226,9 @@ const uploadExcelFile = async(req,res)=>{
   }
 }
 const getBulkWeightedIncrement = async(req,res)=>{
+  const {reviewCycle} = req.query;
   try {
-    const result = await incrementService.getBulkWeightedIncrement();
+    const result = await incrementService.getBulkWeightedIncrement(reviewCycle);
     return res.status(200).json(result);
   } catch (err) {
     console.error('Error fetching bulk weighted increment:', err.message);

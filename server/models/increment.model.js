@@ -234,7 +234,6 @@ const formatted = date.toISOString().split('T')[0]; // '2022-03-01'
         const historicalRatings = await db('historical_data')
         .select('final_score')
         .where('reviewer', managerName)
-        .andWhere('review_cycle', reviewCycle)
         .andWhereRaw(
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
           [formatted]
@@ -284,7 +283,7 @@ const isOlderEmployee = async (id) => {
             diffYears--;
         }
 
-        return diffYears == 3;
+        return diffYears == 4;
     } catch (error) {
         return error.message;
     }
@@ -410,9 +409,11 @@ const getHistoricalData = async (emplyeeName,sortBy,sortOrder)=>{
 
 const getAllInrementData = async (reviewCycle)=>{
     try{
+        console.log("reviewCycle",reviewCycle)
         const allIncrementData = await db('increment_details').select("*").where('appraisal_cycle', reviewCycle);
         return allIncrementData;
     }catch(err){
+        console.log(err)
         throw new Error('Error fetching all increment data');
     }
 }
