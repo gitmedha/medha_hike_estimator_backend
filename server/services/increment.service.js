@@ -335,21 +335,43 @@ const uploadExcelFile = async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    for (let row of data){
-    const dataObj = {}
-    let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer.split(" ");
+    for (let i = 1; i < data.length; i++) {
+    let row = data[i];
 
-    dataObj.employee_id = `${employeeInfo[0]}`;
-    dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-    dataObj.average = parseFloat(row['Final Score']);
-    dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
-    dataObj.compentency = parseFloat(row.Competency);
-    dataObj.appraisal_cycle = row['Appraisal Cycle'];
+    const dataObj = {
+      employee_id: row.__EMPTY,
+      full_name: row.__EMPTY_1,
+      kra_vs_goals: parseFloat(row['Apr - Mar 2024']) || 0,
+      compentency: parseFloat(row.__EMPTY_8) || 0,
+      average: parseFloat(row.__EMPTY_9) || 0,
+      manager: row.__EMPTY_10 || '',
+      appraisal_cycle:'April 2023-Mar 2024'
+    };
+
+    // if(dataObj.id === 'M0411'){
+    //   console.log("dataObj.id",dataObj.id);
+
+    //   break;
+    // }
+
+    // let employeeInfo = row.Employee.split(" ");
+    // let managerInfo = row.Reviewer.split(" ");
+
+    // dataObj.employee_id = `${employeeInfo[0]}`;
+    // dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    // dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    // dataObj.average = parseFloat(row['Final Score']);
+    // dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
+    // dataObj.compentency = parseFloat(row.Competency);
+    // dataObj.appraisal_cycle = row['Appraisal Cycle'];
   
-
+    // break;
     await db('increment_details').insert(dataObj);
+    
+    if(dataObj.employee_id === 'M0418'){
+      console.log("Breaking")
+      break;
+    }
     }
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {

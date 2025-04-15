@@ -234,7 +234,6 @@ const formatted = date.toISOString().split('T')[0]; // '2022-03-01'
         const historicalRatings = await db('historical_data')
         .select('final_score')
         .where('reviewer', managerName)
-        .andWhere('review_cycle', reviewCycle)
         .andWhereRaw(
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
           [formatted]
@@ -284,7 +283,7 @@ const isOlderEmployee = async (id) => {
             diffYears--;
         }
 
-        return diffYears == 3;
+        return diffYears == 4;
     } catch (error) {
         return error.message;
     }

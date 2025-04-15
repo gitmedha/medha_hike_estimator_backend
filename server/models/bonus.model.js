@@ -142,20 +142,20 @@ const updateBonus = async (id,updateData)=>{
 
 const insertBulkData = async(data,review_cycle)=>{
     try{
-        if(Object.keys(data).length === 6){
-            await db('bonus_details').insert({
-                employee_id: data.id,
-                full_name: data.name,
-                kra: parseFloat(parseFloat(data.kra).toFixed(1)),
-                compentency: parseFloat(parseFloat(data.compentency).toFixed(1)),
-                average: parseFloat(parseFloat(data.average).toFixed(1)),
-                review_cycle: review_cycle,
-                manager: data.manager,
-            });
-        }
+
+        await db('bonus_details').insert({
+            employee_id: data.id,
+            full_name: data.name,
+            kra: parseFloat(parseFloat(data.kra).toFixed(1)),
+            compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
+            average: parseFloat(parseFloat(data.average).toFixed(1)),
+            review_cycle: review_cycle,
+            manager: data.manager,
+        });
         return;
     
     } catch(error){
+        console.log("this", error)
         throw new Error(error.message);
     }
 
@@ -192,6 +192,7 @@ const getAllRatings = async (reviewCycle)=>{
 }
 
 const getHistoricalRatings = async (managerName,reviewCycle)=>{
+    console.log("reviewCycle",reviewCycle)
     if (!managerName) {
         throw new Error('Manager name is required');
     }
@@ -208,7 +209,6 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
         const historicalRatings = await db('historical_data')
         .select('final_score')
         .where('reviewer', managerName)
-        .andWhere('review_cycle', reviewCycle)
         .andWhereRaw(
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
           [formatted]
@@ -216,6 +216,7 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
         const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
         return historicalRatingList;
     }catch(err){
+        console.log(err);
         throw new Error('Error fetching historical ratings');
     }
 }

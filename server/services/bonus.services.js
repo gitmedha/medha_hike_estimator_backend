@@ -137,19 +137,29 @@ const getPickLists = async ()=>{
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
+    // console.log(data);
 
-    for (let row of data){
-    const dataObj = {}
-    let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer.split(" ");
-    dataObj.id = `${employeeInfo[0]}`;
-    dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-    dataObj.average = parseFloat(row['Final Score']);
-    dataObj.kra = parseFloat(row['KRA vs GOALS']);
-    dataObj.compentency = parseFloat(row.Competency);
-    
-    await insertBulkData(dataObj,row['Appraisal Cycle']);
+    for (let i = 1; i < data.length; i++){
+      const row = data[i];
+
+    const dataObj = {
+      id: row.__EMPTY,
+      name: row.__EMPTY_1,
+      kra: parseFloat(row['Apr - Sept 2023']) || 0,
+      competency: parseFloat(row.__EMPTY_2) || 0,
+      average: parseFloat(row.__EMPTY_3) || 0,
+      manager: row.__EMPTY_4 || '',
+      review_cycle:'April 2023-Sep 2023'
+    };
+
+    if(dataObj.id === 'M0411'){
+      console.log("dataObj.id",dataObj.id);
+
+      break;
+    }
+
+    await insertBulkData(dataObj,'April 2023-Sep 2023');
+    console.log("coming")
     }
     return { message: "Data uploaded and inserted successfully!" };
 
