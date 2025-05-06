@@ -23,7 +23,7 @@ const tableColumnsMap = {
         { header: 'KRA', key: 'kra_vs_goals' },
         { header: 'Compentency', key: 'compentency' },
         { header: 'Average', key: 'average' },
-        { header: 'Normalized Ratings', key: 'normalized_rating' },
+        { header: 'Normalized Ratings', key: 'normalize_rating' },
         { header: 'Increment', key: 'increment' },
         { header: 'Weighted Increment', key: 'weighted_increment' }
     ]
@@ -33,7 +33,7 @@ const downloadExcel = async (req, res, tableName) => {
     try {
         let reviewCycle = req.query.reviewCycle || null;
         let query = db(`${tableName}`).select('*');
-
+console.log("reviewCycle", reviewCycle);
         if (reviewCycle) {
             const cycleKey = tableName === 'increment_details' ? 'appraisal_cycle' : 'review_cycle';
             query = query.where(cycleKey, reviewCycle);

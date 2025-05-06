@@ -1,6 +1,10 @@
 const db = require('../config/db');
 
 const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'asc') => {
+    const rowOffset = offset * limit; // offset is page index (0-based)
+    console.log("page offset (pageIndex):", offset);
+    console.log("limit:", limit);
+    console.log("rowOffset (for DB):", rowOffset);
     try {
         const bonusData = await db
             .select("*")
@@ -18,7 +22,7 @@ const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'as
                     })
                     .as("filtered_bonus"); // Alias for filtered dataset
             })
-            .offset(offset)
+            .offset(rowOffset)
             .limit(limit)
             .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC")
             .modify((queryBuilder) => {
@@ -140,7 +144,7 @@ const updateBonus = async (id,updateData)=>{
     }
 }
 
-const insertBulkData = async(data,review_cycle)=>{
+const insertBulkData = async(data)=>{
     try{
 
         await db('bonus_details').insert({
@@ -149,7 +153,7 @@ const insertBulkData = async(data,review_cycle)=>{
             kra: parseFloat(parseFloat(data.kra).toFixed(1)),
             compentency: parseFloat(parseFloat(data.competency).toFixed(1)),
             average: parseFloat(parseFloat(data.average).toFixed(1)),
-            review_cycle: review_cycle,
+            review_cycle: data.review_cycle,
             manager: data.manager,
         });
         return;

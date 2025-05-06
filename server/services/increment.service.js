@@ -173,17 +173,21 @@ const fetchIncrementDataById = async (id,review_cycle) => {
 }
 
 const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle)=>{
-  
+  // If standard deviation is 0, try to include historical ratings if available
+
   if(!STDEVP){
     //historical data for the same manager
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
+      console.log("ratings",ratings)
+      console.log("peerRatings",peerRatings)
+      console.log("historicalRatings",historicalRatings)
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
     }
     else {
-
       //average for all the employees of the current data
+      // calculateAverage([3.4,3.8,3.6])
      return calculateAverage([...allRatings])
     }
   }
@@ -221,17 +225,26 @@ const getNormalizedRating = async (data)=>{
     const {reviewCycle,employeeId,managerName} = data;
     if(ratings){
 
+      console.log("ratings",ratings)
       //peer ratings for the same manager
       const peerRatings = await incrementModel.getPeerRatings(managerName, employeeId,reviewCycle);
 
+      console.log("peerRatings",peerRatings)
+
       //population standard deviation for the all reportees
 
-      const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
+      const STDEVP =  calculateStandardDeviation([ratings,...peerRatings]);
+
+
+      console.log("STDEVP",STDEVP)
     
       const allRatings = await incrementModel.getAllRatings(reviewCycle);      
       const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
       const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
-      const normalizedRating = await calculateStandardizedValue(ratings,mean,std,reviewCycle);
+      console.log("mean",mean)
+      console.log("std",std)
+      
+      const normalizedRating = calculateStandardizedValue(ratings,mean,std,reviewCycle);
       
       
       return parseFloat(normalizedRating.toFixed(2));
@@ -332,43 +345,23 @@ const uploadExcelFile = async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    for (let i = 1; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
     let row = data[i];
 
-    const dataObj = {
-      employee_id: row.__EMPTY,
-      full_name: row.__EMPTY_1,
-      kra_vs_goals: parseFloat(row['Apr - Mar 2024']) || 0,
-      compentency: parseFloat(row.__EMPTY_8) || 0,
-      average: parseFloat(row.__EMPTY_9) || 0,
-      manager: row.__EMPTY_10 || '',
-      appraisal_cycle:'April 2023-Mar 2024'
-    };
+    const dataObj = {};
 
-    // if(dataObj.id === 'M0411'){
-    //   console.log("dataObj.id",dataObj.id);
 
-    //   break;
-    // }
+    let employeeInfo = row.Employee.split(" ");
+    let managerInfo = row.Reviewer.split(" ");
 
-    // let employeeInfo = row.Employee.split(" ");
-    // let managerInfo = row.Reviewer.split(" ");
-
-    // dataObj.employee_id = `${employeeInfo[0]}`;
-    // dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    // dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-    // dataObj.average = parseFloat(row['Final Score']);
-    // dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
-    // dataObj.compentency = parseFloat(row.Competency);
-    // dataObj.appraisal_cycle = row['Appraisal Cycle'];
-  
-    // break;
+    dataObj.employee_id = `${employeeInfo[0]}`;
+    dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+    dataObj.average = parseFloat(row['Final Score']);
+    dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
+    dataObj.compentency = parseFloat(row.Competency);
+    dataObj.appraisal_cycle = row['Appraisal Cycle'];
     await db('increment_details').insert(dataObj);
-    
-    if(dataObj.employee_id === 'M0418'){
-      console.log("Breaking")
-      break;
-    }
     }
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {

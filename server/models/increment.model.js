@@ -1,9 +1,13 @@
 const db = require('../config/db');
 
-const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
-    try{
+const getIncrementData = async(offset, limit, sortBy, sortOrder) => {
+    try {
+        const rowOffset = offset * limit; // offset is page index (0-based)
+        console.log("page offset (pageIndex):", offset);
+        console.log("limit:", limit);
+        console.log("rowOffset (for DB):", rowOffset);
 
-       const incrementData = await db
+        const incrementData = await db
             .select("*")
             .from(function () {
                 this.select("id.*")
@@ -17,7 +21,7 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
                     `)
                     .as("latest_increment");
             })
-            .offset(offset)
+            .offset(rowOffset)
             .limit(limit)
             .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC")
             .modify((queryBuilder) => {
@@ -33,10 +37,12 @@ const getIncrementData = async(offset,limit,sortBy,sortOrder)=>{
             totalCount: totalCount[0].total,
             data: incrementData,
         };
-    }catch(err){
+    } catch (err) {
+        console.error(err);
         throw new Error('Error fetching increment data');
     }
-}
+};
+
 
 const getIncrementDataById = async (id,review_cycle) => {
     try {
@@ -283,7 +289,7 @@ const isOlderEmployee = async (id) => {
             diffYears--;
         }
 
-        return diffYears == 4;
+        return diffYears == 4 || diffYears == 10;
     } catch (error) {
         return error.message;
     }
