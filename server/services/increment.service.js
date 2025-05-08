@@ -59,9 +59,9 @@ const fetchIncrementDataById = async (id,review_cycle) => {
     }
   };
 
-  const filterIncrementData = async (fields, values, limit, offset) => {
+  const filterIncrementData = async (fields, values, limit, offset,reviewCycle) => {
     try {
-      const result = await incrementModel.filterIncrementData(fields, values, limit, offset);
+      const result = await incrementModel.filterIncrementData(fields, values, limit, offset,reviewCycle);
       return result;
     } catch (err) {
       throw new Error(`Service Error: Unable to filter increment data. ${err.message}`);
@@ -345,11 +345,27 @@ const uploadExcelFile = async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 1; i < data.length; i++) {
     let row = data[i];
 
-    const dataObj = {};
+    // const dataObj = {
+    //   employee_id: row.__EMPTY,
+    //   full_name: row.__EMPTY_1,
+    //   kra_vs_goals: parseFloat(row['Apr - Mar 2024']) || 0,
+    //   compentency: parseFloat(row.__EMPTY_8) || 0,
+    //   average: parseFloat(row.__EMPTY_9) || 0,
+    //   manager: row.__EMPTY_10 || '',
+    //   appraisal_cycle:'April 2023-Mar 2024'
+    // };
 
+    // await db('increment_details').insert(dataObj);
+    
+    // if(dataObj.employee_id === 'M0418'){
+    //   console.log("dataObj",dataObj)
+    //   console.log("Breaking")
+    //   break;
+    // }
+    const dataObj = {};
 
     let employeeInfo = row.Employee.split(" ");
     let managerInfo = row.Reviewer.split(" ");

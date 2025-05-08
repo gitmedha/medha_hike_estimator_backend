@@ -64,10 +64,10 @@ const getIncrementData = async (req, res) => {
     }
   };
   const filterIncrementData = async (req, res) => {
-    const { fields, values } = req.body;
+    const { fields, values,reviewCycle } = req.body;
     const { limit, offset} = req.params;
     try {
-      const result = await incrementService.filterIncrementData(fields, values, limit, offset);
+      const result = await incrementService.filterIncrementData(fields, values, limit, offset,reviewCycle);
       return res.status(200).json(result);
     } catch (err) {
       console.error('Error filtering increment data:', err.message);

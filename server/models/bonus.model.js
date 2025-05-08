@@ -196,7 +196,6 @@ const getAllRatings = async (reviewCycle)=>{
 }
 
 const getHistoricalRatings = async (managerName,reviewCycle)=>{
-    console.log("reviewCycle",reviewCycle)
     if (!managerName) {
         throw new Error('Manager name is required');
     }

@@ -109,31 +109,83 @@ const fetchFilterDropdown = async()=>{
         throw new Error(`Error fetching filter dropdown data: ${error.message}`);
     }
 }
-const filterIncrementData = async (fields,values,limit,offset) =>{
-    try{
-        if (fields.length !== values.length) {
-            throw new Error('Fields and values arrays must have the same length');
+const filterIncrementData = async (fields, values, limit, offset, reviewCycle) => {  
+    try {
+      if (fields.length !== values.length) {
+        throw new Error('Fields and values arrays must have the same length');
+      }
+  
+      const currentDate = new Date();
+  
+      // Base query for data
+      const dataQuery = db('increment_details')
+        .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
+        .select('increment_details.*')
+        .where('increment_details.appraisal_cycle', reviewCycle);
+  
+      // Base query for count
+      const countQuery = db('increment_details')
+        .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
+        .where('increment_details.appraisal_cycle', reviewCycle);
+  
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i];
+        const value = values[i];
+  
+        if (field === 'tenure') {
+          const [min, max] = value.split('-').map(Number);
+  
+          dataQuery.whereRaw(
+            `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
+            [currentDate, min, max]
+          );
+          countQuery.whereRaw(
+            `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
+            [currentDate, min, max]
+          );
+        } else if (field === 'current_band') {
+          dataQuery.where('employee_details.current_band', value);
+          countQuery.where('employee_details.current_band', value);
+        } else if (field === 'long_tenure') {
+            
+            const match = reviewCycle.match(/Mar\s+(\d{4})/i);
+            if (!match) throw new Error("Invalid reviewCycle format for long_tenure logic");
+          
+            const reviewYear = parseInt(match[1]);
+            const cutoffDate = new Date(`${reviewYear}-03-31`);
+          
+            if (value === 'Yes') {
+              dataQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) >= 4`, [cutoffDate]);
+              countQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) >= 4`, [cutoffDate]);
+            } else if (value === 'No') {
+              dataQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) < 4`, [cutoffDate]);
+              countQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) < 4`, [cutoffDate]);
+            }
+          }
+         else {
+          dataQuery.where(`increment_details.${field}`, value);
+          countQuery.where(`increment_details.${field}`, value);
         }
-        const baseQuery = db('increment_details');
-
-        fields.forEach((field, index) => {
-            baseQuery.where(field, values[index]);
-        });
-
-        const paginatedData = await baseQuery
-        .clone()
-        .select("*")
-        .limit(limit)
-        .offset(offset);
-
-        return {
-            total: paginatedData.length,
-            data: paginatedData,
-        };
-    }catch(err){
-        throw new Error(`Error filtering increment data: ${err.message}`);
+      }
+  
+      console.log("dataQuery", dataQuery.toString());
+      console.log("countQuery", countQuery.toString());
+  
+      const data = await dataQuery.limit(limit).offset(offset);
+      const countResult = await countQuery.count('* as total');
+      const total = parseInt(countResult[0].total, 10);
+  
+      return {
+        total,
+        data,
+      };
+    } catch (err) {
+      throw new Error(`Error filtering increment data: ${err.message}`);
     }
-}
+  };
+  
+  
+  
 
 const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
     try{
@@ -265,35 +317,48 @@ const getAllRatings = async (reviewCycle)=>{
     }
 }
 
-const isOlderEmployee = async (id) => {
+const isOlderEmployee = async (id, reviewCycle) => {
     try {
-        const employee = await db('employee_details').where('employee_id', id).first();
-        if (!employee) {
-            throw new Error('Employee not found');
-        }
+      const employee = await db('employee_details').where('employee_id', id).first();
+      if (!employee) {
+        throw new Error('Employee not found');
+      }
+  console.log("employee",employee);
+      // Normalize and extract year from reviewCycle
+      const match = reviewCycle.match(/(?:mar(?:ch)?)[^\d]*(\d{4})/i);
+      if (!match) {
+        throw new Error('Invalid reviewCycle format');
+      }
+  
+      const endYear = parseInt(match[1]); // Extracted year like 2023
 
-        const currentDate = new Date();
-        const hireDate = new Date(employee.date_of_joining);
-        console.log("employee.date_of_joining",employee.date_of_joining)
-    
-
-        // Calculate the difference in years
-        let diffYears = currentDate.getFullYear() - hireDate.getFullYear();
-
-        // Adjust if the employee hasn't reached the anniversary yet this year
-        const hasAnniversaryPassed =
-            currentDate.getMonth() > hireDate.getMonth() ||
-            (currentDate.getMonth() === hireDate.getMonth() && currentDate.getDate() >= hireDate.getDate());
-
-        if (!hasAnniversaryPassed) {
-            diffYears--;
-        }
-
-        return diffYears == 4 || diffYears == 10;
+      console.log("endYear",endYear);
+  
+      // Assume review cycle ends on March 31 of that year
+      const reviewEndDate = new Date(`March 31, ${endYear}`);
+  
+      console.log("reviewEndDate",reviewEndDate);
+      const hireDate = new Date(employee.date_of_joining);
+      console.log("hireDate",hireDate);
+  
+      // Calculate years of service as of review end date
+      let diffYears = reviewEndDate.getFullYear() - hireDate.getFullYear();
+  
+      // Adjust if anniversary not reached by March 31
+      const hasAnniversaryPassed =
+        reviewEndDate.getMonth() > hireDate.getMonth() ||
+        (reviewEndDate.getMonth() === hireDate.getMonth() &&
+          reviewEndDate.getDate() >= hireDate.getDate());
+  
+      if (!hasAnniversaryPassed) {
+        diffYears--;
+      }
+      return diffYears === 4 || diffYears === 10;
     } catch (error) {
-        return error.message;
+      return error.message;
     }
-};
+  };
+  
 
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
     try {
@@ -304,7 +369,7 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .first(); 
 
       if (result) {
-        const isOlder = await isOlderEmployee(employeeId);
+        const isOlder = await isOlderEmployee(employeeId,reviewCycle);
         if (isOlder) {  
             const percentage = parseFloat(result.increment_percentage);
             const updatedPercentage = percentage + 10;

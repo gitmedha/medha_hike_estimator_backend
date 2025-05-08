@@ -25,7 +25,12 @@ const tableColumnsMap = {
         { header: 'Average', key: 'average' },
         { header: 'Normalized Ratings', key: 'normalize_rating' },
         { header: 'Increment', key: 'increment' },
-        { header: 'Weighted Increment', key: 'weighted_increment' }
+        { header: 'Weighted Increment', key: 'weighted_increment' },
+        {header:'Long Tenure', key:'long_tenure'},
+        {header:'Current band', key:'current_band'},
+        {header:'Current Salary', key:'current_salary'},
+        {header:'New Band', key:'new_band'},
+        {header:'New Salary', key:'new_salary'},
     ]
 };
 
@@ -33,7 +38,6 @@ const downloadExcel = async (req, res, tableName) => {
     try {
         let reviewCycle = req.query.reviewCycle || null;
         let query = db(`${tableName}`).select('*');
-console.log("reviewCycle", reviewCycle);
         if (reviewCycle) {
             const cycleKey = tableName === 'increment_details' ? 'appraisal_cycle' : 'review_cycle';
             query = query.where(cycleKey, reviewCycle);
