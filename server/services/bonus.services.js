@@ -214,7 +214,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
   if(!STDEVP){
     //historical data for the same manager
     const historicalRatings = await getHistoricalRatings(managerName,reviewCycle);
-    if(historicalRatings){
+  if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
     }
@@ -263,13 +263,20 @@ const calculateBonusRating = async (data)=>{
     
           //population standard deviation for the all reportees
     
-          const STDEVP = await calculateStandardDeviation([ratings,...peerRatings]);
+        
+          const STDEVP =  calculateStandardDeviation([ratings,...peerRatings]);
           const allRatings = await getAllRatings(reviewCycle);
           
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
 
+          console.log("mean",mean);
+
           const std = await standardDevCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
-          const normalizedRating = await calculateStandardizedValue(ratings,mean,std);
+          console.log("std",std);
+          const normalizedRating = calculateStandardizedValue(ratings,mean,std);
+
+          console.log("normalizedRating",normalizedRating);
+
           return parseFloat(normalizedRating.toFixed(2));
         }
         else {

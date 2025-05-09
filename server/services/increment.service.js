@@ -180,14 +180,10 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
     const historicalRatings = await incrementModel.getHistoricalRatings(managerName,reviewCycle);
     if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
-      console.log("ratings",ratings)
-      console.log("peerRatings",peerRatings)
-      console.log("historicalRatings",historicalRatings)
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
     }
     else {
       //average for all the employees of the current data
-      // calculateAverage([3.4,3.8,3.6])
      return calculateAverage([...allRatings])
     }
   }

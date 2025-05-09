@@ -209,8 +209,9 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
     const formatted = date.toISOString().split('T')[0]; 
 
     try{
+        console.log("formatted date",formatted);
         const historicalRatings = await db('historical_data')
-        .select('final_score')
+        .select('*')
         .where('reviewer', managerName)
         .andWhereRaw(
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
