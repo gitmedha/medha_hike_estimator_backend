@@ -200,6 +200,7 @@ const calculateAverage =(values)=>{
     if (!values || values.length === 0) return 0;
 
     const mean = calculateAverage(values);
+    console.log("values",values)
     const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
     const meanSquaredDiff = calculateAverage(squaredDiffs);
     return Math.sqrt(meanSquaredDiff);
@@ -214,6 +215,7 @@ const meanCalculation = async (STDEVP,ratings,peerRatings,allRatings,managerName
   if(!STDEVP){
     //historical data for the same manager
     const historicalRatings = await getHistoricalRatings(managerName,reviewCycle);
+    console.log("historicalRatings",historicalRatings);
   if(historicalRatings.length){
       //combine average for all the reportees of current ratings and historical ratings
      return calculateAverage([ratings,...peerRatings, ...historicalRatings]);
@@ -266,7 +268,7 @@ const calculateBonusRating = async (data)=>{
         
           const STDEVP =  calculateStandardDeviation([ratings,...peerRatings]);
           const allRatings = await getAllRatings(reviewCycle);
-          
+          console.log("allRatings",allRatings);
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
 
           console.log("mean",mean);
