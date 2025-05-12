@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const moment  = require('moment');
 
 const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'asc') => {
     const rowOffset = offset * limit; // offset is page index (0-based)
@@ -206,10 +207,9 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
     }
 
     const newDate = reviewCycle.split('-')[1];
-    console.log("newDate",newDate);
 
-    const date = new Date('01 ' + newDate);
-    const formatted = date.toISOString().split('T')[0]; 
+    const formatted = moment(`01 ${newDate}`, 'DD MMM YYYY').format('YYYY-MM-DD');
+    console.log("formatted date", formatted);
 
     try{
         console.log("formatted date",formatted);
@@ -217,7 +217,7 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
         .select('*')
         .where('reviewer', managerName)
         .andWhereRaw(
-          "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
+          "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') < ?",
           [formatted]
         );
         console.log("historicalRatings",historicalRatings);
