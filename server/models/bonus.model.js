@@ -196,6 +196,8 @@ const getAllRatings = async (reviewCycle)=>{
 }
 
 const getHistoricalRatings = async (managerName,reviewCycle)=>{
+    console.log("managerName",managerName);
+    console.log("reviewCycle",reviewCycle);
     if (!managerName) {
         throw new Error('Manager name is required');
     }
@@ -204,6 +206,7 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
     }
 
     const newDate = reviewCycle.split('-')[1];
+    console.log("newDate",newDate);
 
     const date = new Date('01 ' + newDate);
     const formatted = date.toISOString().split('T')[0]; 
@@ -217,6 +220,7 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') <= ?",
           [formatted]
         );
+        console.log("historicalRatings",historicalRatings);
         const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
         return historicalRatingList;
     }catch(err){

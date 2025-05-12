@@ -334,6 +334,10 @@ const isOlderEmployee = async (id, reviewCycle) => {
     const reviewEndDate = new Date(`March 31, ${endYear}`);
 
     const hireDate = new Date(employee.date_of_joining);
+    console.log("employee.date_of_joining",employee);
+    console.log("hireDate",hireDate)
+    console.log("reviewStartDate",reviewStartDate)
+    console.log("reviewEndDate",reviewEndDate)
 
     // Check 4th and 10th anniversaries
     const fourthAnniversary = new Date(hireDate);
@@ -341,6 +345,8 @@ const isOlderEmployee = async (id, reviewCycle) => {
 
     const tenthAnniversary = new Date(hireDate);
     tenthAnniversary.setFullYear(hireDate.getFullYear() + 10);
+    console.log("fourthAnniversary",fourthAnniversary)
+    console.log("tenthAnniversary",tenthAnniversary)
 
     const completes4Years = fourthAnniversary >= reviewStartDate && fourthAnniversary <= reviewEndDate;
     const completes10Years = tenthAnniversary >= reviewStartDate && tenthAnniversary <= reviewEndDate;
@@ -363,12 +369,12 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .first(); 
 
       if (result) {
-        const isOlder = await isOlderEmployee(employeeId,reviewCycle);
-        if (isOlder) {  
-            const percentage = parseFloat(result.increment_percentage);
-            const updatedPercentage = percentage + 10;
-            result.increment_percentage = updatedPercentage; // Add 10% for employees with more than 3 years of experience
-        }
+        // const isOlder = await isOlderEmployee(employeeId,reviewCycle);
+        // if (isOlder) {  
+        //     const percentage = parseFloat(result.increment_percentage);
+        //     const updatedPercentage = percentage + 10;
+        //     result.increment_percentage = updatedPercentage; // Add 10% for employees with more than 3 years of experience
+        // }
         await db('increment_details')
         .where('employee_id', employeeId)
         .andWhere('appraisal_cycle', reviewCycle)

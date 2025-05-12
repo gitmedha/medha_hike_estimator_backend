@@ -258,6 +258,7 @@ const calculateBonusRating = async (data)=>{
     try {
         const ratings = data.ratings ? Number(data.ratings):0;
         const {reviewCycle,employeeId,managerName} = data;
+        console.log("data",data);
         if(ratings){
     
           //peer ratings for the same manager
