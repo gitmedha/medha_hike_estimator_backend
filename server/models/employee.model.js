@@ -143,7 +143,7 @@ const getEmployeeHistoricDetails = async (firstName,lastName,sortBy,sortOrder) =
                    .where('employee', `${firstName} ${lastName}`)
                    .orderBy(sortBy,sortOrder);    
 
-                   
+    
     return historicalDetails;
   } catch (error) {
     throw new Error(error.message);

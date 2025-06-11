@@ -169,8 +169,6 @@ const filterIncrementData = async (fields, values, limit, offset, reviewCycle) =
         }
       }
   
-      console.log("dataQuery", dataQuery.toString());
-      console.log("countQuery", countQuery.toString());
   
       const data = await dataQuery.limit(limit).offset(offset);
       const countResult = await countQuery.count('* as total');

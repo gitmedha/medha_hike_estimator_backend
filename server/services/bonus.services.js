@@ -61,6 +61,9 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
  }
 
  const createBonusService = async(bonusData)=>{
+      bonusData.review_cycle = `Mar ${bonusData.from_review_cycle.split(" ")[1]} - Sep ${bonusData.to_review_cycle.split(" ")[1]}`;
+      delete bonusData.from_review_cycle;
+      delete bonusData.to_review_cycle;
     try{
         const result = await createBonus(bonusData);
         return result;
@@ -89,7 +92,6 @@ const getBonusByIdService = async(id,reviewCycle)=>{
 }
 
 const getPickLists = async (reviewCycle)=>{
-  console.log("reviewCycle+++",reviewCycle);
     try{
         const pickLists =  {}
         const {IDS,Names,Managers} = await getBonusPickLists(reviewCycle);

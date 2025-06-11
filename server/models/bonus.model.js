@@ -197,8 +197,7 @@ const getAllRatings = async (reviewCycle)=>{
 }
 
 const getHistoricalRatings = async (managerName,reviewCycle)=>{
-    console.log("managerName",managerName);
-    console.log("reviewCycle",reviewCycle);
+    
     if (!managerName) {
         throw new Error('Manager name is required');
     }
@@ -209,10 +208,8 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
     const newDate = reviewCycle.split('-')[1];
 
     const formatted = moment(`01 ${newDate}`, 'DD MMM YYYY').format('YYYY-MM-DD');
-    console.log("formatted date", formatted);
 
     try{
-        console.log("formatted date",formatted);
         const historicalRatings = await db('historical_data')
         .select('*')
         .where('reviewer', managerName)
@@ -220,7 +217,7 @@ const getHistoricalRatings = async (managerName,reviewCycle)=>{
           "TO_DATE('01 ' || ending_month, 'DD Mon YYYY') < ?",
           [formatted]
         );
-        console.log("historicalRatings",historicalRatings);
+        
         const historicalRatingList = historicalRatings.map(historicalRating=>parseFloat(historicalRating.final_score));
         return historicalRatingList;
     }catch(err){
