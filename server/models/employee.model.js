@@ -176,8 +176,20 @@ const checkIfExists = async(employeeId) =>{
     throw new Error(error.message);
   }
 }
+function convertExperienceToMonths(experienceString) {
+  // Extract years and months from the string
+  const yearMatch = experienceString.match(/(\d+)\s*year/);
+  const monthMatch = experienceString.match(/(\d+)\s*month/);
+  
+  const years = yearMatch ? parseInt(yearMatch[1]) : 0;
+  const months = monthMatch ? parseInt(monthMatch[1]) : 0;
+  
+  return (years * 12) + months;
+}
 const createEmployee = async (employeeData) => {
   try {
+        const experienceInMonths = convertExperienceToMonths(employeeData.experience);
+
     const [newEmployee] = await db('employee_details')
       .insert({
         first_name: employeeData.first_name,
@@ -190,7 +202,7 @@ const createEmployee = async (employeeData) => {
         employee_type: employeeData.employee_type,
         current_band: employeeData.current_band,
         employee_id: employeeData.employee_id,
-        experience: employeeData.experience
+        experience: experienceInMonths
       })
       .returning('*');  
 
@@ -202,6 +214,9 @@ const createEmployee = async (employeeData) => {
 };
 
 const updateEmployeeQuery = async (id, employeeData) => {
+         if (employeeData.experience) {
+        employeeData.experience = convertExperienceToMonths(employeeData.experience);
+      }
   try {
       const [updatedEmployee] = await db('employee_details')
           .where({ id })
