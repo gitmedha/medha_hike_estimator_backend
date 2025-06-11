@@ -75,6 +75,7 @@ const getIncrementDataById = async (id,review_cycle) => {
 
 const createIncrementData = async(incrementData)=>{
     try{
+      
         const newIncrement = await db('increment_details').insert(incrementData).returning('employee_id');
         return newIncrement;
     }catch(err){

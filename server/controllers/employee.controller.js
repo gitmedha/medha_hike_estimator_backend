@@ -10,8 +10,9 @@ const createEmployee = async(req, res) => {
 
     const employeeData = req.body;
     const employee = employeeService.checkIfExists(employeeData.employee_id);
+    console.log(employee);
 
-    if(employee){
+    if(employee.length){
      return res.status(400).json({error:'Duplicate entry', message: 'Employee already exists'})
     }
     

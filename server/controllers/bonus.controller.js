@@ -99,7 +99,9 @@ const searchBonus = async(req,res)=>{
 
 const loadDropDown = async(req,res)=>{
     try {
-        const result = await getPickLists();
+        const {reviewCycle} = req.query;
+        console.log("Review Cycle:", reviewCycle);
+        const result = await getPickLists(reviewCycle);
         return res.status(200).json(result);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error", error: error.message });

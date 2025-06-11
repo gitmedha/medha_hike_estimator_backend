@@ -88,12 +88,11 @@ const getBonusByIdService = async(id,reviewCycle)=>{
  
 }
 
-const getPickLists = async ()=>{
+const getPickLists = async (reviewCycle)=>{
+  console.log("reviewCycle+++",reviewCycle);
     try{
-        const pickLists =  {
-
-        }
-        const {IDS,Names,Managers} = await getBonusPickLists();
+        const pickLists =  {}
+        const {IDS,Names,Managers} = await getBonusPickLists(reviewCycle);
 
         pickLists.IDS = IDS.map((entity)=>({
             label: entity.employee_id,
