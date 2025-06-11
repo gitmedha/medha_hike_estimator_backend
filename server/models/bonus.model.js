@@ -119,11 +119,11 @@ const getBonusById =async (id,reviewCycle)=>{
 }
 
 
-const getBonusPickLists = async()=>{
+const getBonusPickLists = async(reviewCycle)=>{
     try {
-        const IDS = await getBonusDropdown('employee_id');
-        const Names = await getBonusDropdown('full_name');
-        const Managers = await getBonusDropdown('manager');
+        const IDS = await getBonusDropdown('employee_id',reviewCycle);
+        const Names = await getBonusDropdown('full_name',reviewCycle);
+        const Managers = await getBonusDropdown('manager',reviewCycle);
 
         return {
             IDS,
