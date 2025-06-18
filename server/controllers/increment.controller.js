@@ -274,6 +274,17 @@ const getIncrementDataByReviewCycle = async(req,res) => {
   }
 }
 
+const transferIncrementToHistorical = async (req, res) => {
+  const { review_cycle } = req.params;
+  try {
+    const result = await incrementService.transferIncrementToHistorical(review_cycle);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Error transferring increment data to historical:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -297,6 +308,7 @@ module.exports = {
     getBulkWeightedIncrement,
     getAllReviewCycles,
     getAllCycles,
-    getIncrementDataByReviewCycle
+    getIncrementDataByReviewCycle,
+    transferIncrementToHistorical
 }
 

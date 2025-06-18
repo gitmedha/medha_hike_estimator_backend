@@ -98,7 +98,8 @@ const deleteIncrementData = async(id)=>{
         const deletedIncrement = await db('increment_details').where('id', id).del();
         return deletedIncrement;
     }catch(err){
-        throw new Error('Error deleting increment data');
+      console.log(err);
+        throw new Error('Error deleting increment data',err);
     }
 }
 
@@ -488,6 +489,15 @@ const getAllInrementData = async (reviewCycle)=>{
     }
 }
 
+
+const createHistoricalRecord = async (data) => {
+  try {
+    return await db('historical_data').insert(data).returning('*');
+  } catch (err) {
+    console.error(err);
+    throw new Error('Error creating historical record');
+  }
+};
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -507,5 +517,6 @@ module.exports = {
     getIncrementDataByReviewCycle,
     getHistoricalData,
     getAllInrementData,
-    getWeightedIncrement
+    getWeightedIncrement,
+    createHistoricalRecord
 }
