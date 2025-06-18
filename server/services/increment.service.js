@@ -58,6 +58,7 @@ const fetchIncrementDataById = async (id,review_cycle) => {
       }
       return { id, message: 'Increment data deleted successfully' };
     } catch (err) {
+      console.log(err);
       throw new Error(`Service Error: Unable to delete increment data. ${err.message}`);
     }
   };
@@ -400,6 +401,45 @@ const getBulkWeightedIncrement = async (reviewCycle)=>{
     throw new Error(`Service Error: Unable to fetch bulk weighted increment data. ${error.message}`);
   }
 }
+const transferIncrementToHistorical = async (reviewCycle) => {
+  if (!reviewCycle) {
+    throw new Error("Review cycle is required to transfer increment data to historical.");
+  }
+  const [startMonth, endMonth] = reviewCycle.split("-").map(part => part.trim());
+
+  try {
+    const allIncrementData = await incrementModel.getAllInrementData(reviewCycle);
+    if (allIncrementData.length === 0) {
+      throw new Error(`No increment data found for review cycle: ${reviewCycle}`);
+    }
+
+    for (const incrementRecord of allIncrementData) {
+     
+      const historicalRecord = {
+        employee_id: incrementRecord.employee_id,
+        employee: incrementRecord.full_name,
+        kra_vs_goals: incrementRecord.kra_vs_goals,
+        competency: incrementRecord.compentency,
+        final_score: incrementRecord.average,
+        start_month: startMonth,
+        ending_month: endMonth,
+        reviewer: incrementRecord.manager
+      };
+
+
+      await incrementModel.createHistoricalRecord(historicalRecord);      
+      console.log(`Transferred record for employee ${incrementRecord.employee_id} to historical data`);
+    }
+
+    return { 
+      message: `Increment data for review cycle ${reviewCycle} transferred to historical successfully`,
+      count: allIncrementData.length 
+    };
+  } catch (error) {
+    console.error(error);
+    throw new Error(`Service Error: Unable to transfer increment data to historical. ${error.message}`);
+  }
+}
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
@@ -419,5 +459,6 @@ const getBulkWeightedIncrement = async (reviewCycle)=>{
     getBulkIncrement,
     uploadExcelFile,
     getBulkWeightedIncrement,
-    getWeightedIncrement
+    getWeightedIncrement,
+    transferIncrementToHistorical
   };

@@ -62,6 +62,8 @@ router.get('/get_all_review_cycles',incrementController.getAllCycles);
 
 router.get('/get_increment_by_appraisal_cycle',incrementController.getIncrementDataByReviewCycle);
 
+router.get('/transfer_increment_to_historical/:review_cycle', incrementController.transferIncrementToHistorical);
+
 
 
 
