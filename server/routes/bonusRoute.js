@@ -22,7 +22,8 @@ const {
     bulkWeightedBonus,
     getAllReviewCycles,
     getAllCycles,
-    getAllBonusesByReview
+    getAllBonusesByReview,
+    transferBonusToHistorical
 } = require('../controllers/bonus.controller');
 
 // Fetch all bonus data
@@ -86,6 +87,9 @@ router.get('/get_data_by_review_cycle/:id/:review_cycle',fetchBonusById);
 router.get('/get_review_cycles',getAllCycles);
 
 router.get('/get_bonuses_by_review',getAllBonusesByReview);
+
+router.get('/transfer_bonus_to_historical/:review_cycle', transferBonusToHistorical);
+
 
 
 module.exports = router;

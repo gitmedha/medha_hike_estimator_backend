@@ -282,6 +282,15 @@ const getAllData = async (reviewCycle)=>{
         throw new Error('Error fetching all increment data');
     }
 }
+
+const createHistoricalRecord = async (data) => {
+  try {
+    return await db('historical_data').insert(data).returning('*');
+  } catch (err) {
+    console.error(err);
+    throw new Error('Error creating historical record');
+  }
+};
 module.exports = {
     getBonus,
     getBonusDropdown,
@@ -297,5 +306,6 @@ module.exports = {
     deleteBonus,
     updateNormalizedRating,
     calculateBonus,
-    getAllData
+    getAllData,
+    createHistoricalRecord
 }

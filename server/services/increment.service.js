@@ -426,7 +426,6 @@ const transferIncrementToHistorical = async (reviewCycle) => {
         reviewer: incrementRecord.manager
       };
 
-
       await incrementModel.createHistoricalRecord(historicalRecord);      
       console.log(`Transferred record for employee ${incrementRecord.employee_id} to historical data`);
     }

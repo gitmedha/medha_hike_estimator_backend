@@ -16,7 +16,8 @@ const {
     deleteBonus,
     calculateBonus,
     getAllData,
-    updateNormalizedRating
+    updateNormalizedRating,
+    createHistoricalRecord
 } = require("../models/bonus.model");
 
 const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
@@ -418,6 +419,46 @@ const calculateBulkWeightedBonus = async (reviewCycle)=>{
   }
 }
 
+const transferBonusData = async (reviewCycle) => {
+  if (!reviewCycle) {
+      throw new Error("Review cycle is required to transfer bonus data to historical.");
+    }
+    const [startMonth, endMonth] = reviewCycle.split("-").map(part => part.trim());
+  
+    try {
+      const allBonusData = await getAllData(reviewCycle);
+      if (allBonusData.length === 0) {
+        throw new Error(`No bonus data found for review cycle: ${reviewCycle}`);
+      }
+  
+      for (const bonusRecord of allBonusData) {
+       
+
+        const historicalRecord = {
+          employee_id: bonusRecord.employee_id,
+          employee: bonusRecord.full_name,
+          kra_vs_goals: bonusRecord.kra,
+          competency: bonusRecord.compentency,
+          final_score: bonusRecord.average,
+          start_month: startMonth,
+          ending_month: endMonth,
+          reviewer: bonusRecord.manager
+        };
+  
+        await createHistoricalRecord(historicalRecord);      
+        console.log(`Transferred record for employee ${allBonusData.employee_id} to historical data`);
+      }
+  
+      return { 
+        message: `Bonus data for review cycle ${reviewCycle} transferred to historical successfully`,
+        count: allBonusData.length 
+      };
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Service Error: Unable to transfer bonus data to historical. ${error.message}`);
+    }
+
+}
 
 module.exports = {
     fetchAllBonusService,
@@ -434,5 +475,6 @@ module.exports = {
     BulkBonusRating,
     BulkBonus,
     getWeightedBonus,
-    calculateBulkWeightedBonus
+    calculateBulkWeightedBonus,
+    transferBonusData
 }
