@@ -13,7 +13,8 @@ const {
     BulkBonusRating,
     BulkBonus,
     getWeightedBonus,
-    calculateBulkWeightedBonus
+    calculateBulkWeightedBonus,
+    transferBonusData
 } = require("../services/bonus.services");
 
 const db = require("../config/db");
@@ -238,6 +239,15 @@ const getAllBonusesByReview = async(req,res)=>{
         return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 }
+const transferBonusToHistorical = async (req, res) => {
+    const { review_cycle } = req.params;
+    try {
+        const result = await transferBonusData(review_cycle);
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+}
 module.exports ={
     fetchAllBonus,
     fetchBonusById,
@@ -259,5 +269,6 @@ module.exports ={
     bulkWeightedBonus,
     getAllReviewCycles,
     getAllCycles,
-    getAllBonusesByReview
+    getAllBonusesByReview,
+    transferBonusToHistorical
 }
