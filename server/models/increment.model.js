@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const moment = require('moment');
+const moment = require('moment-timezone');
 
 const getIncrementData = async(offset, limit, sortBy, sortOrder) => {
     try {
