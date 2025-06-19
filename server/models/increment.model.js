@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const moment = require('moment');
 
 const getIncrementData = async(offset, limit, sortBy, sortOrder) => {
     try {
@@ -317,39 +318,28 @@ const getAllRatings = async (reviewCycle)=>{
     }
 }
 
-const isOlderEmployee = async (id, reviewCycle) => {
+const isOlderEmployee = async (id, countingDateStr) => {
   try {
     const employee = await db('employee_details').where('employee_id', id).first();
     if (!employee) {
       throw new Error('Employee not found');
     }
 
-    const match = reviewCycle.match(/(?:mar(?:ch)?)[^\d]*(\d{4})/i);
-    if (!match) {
-      throw new Error('Invalid reviewCycle format');
+    // Parse dates in IST (Asia/Kolkata)
+    const hireDate = moment(employee.date_of_joining).tz('Asia/Kolkata').startOf('day');
+    const countingDate = moment(countingDateStr, 'DD/MM/YYYY').tz('Asia/Kolkata').startOf('day');
+
+    if (!countingDate.isValid()) {
+      throw new Error('Invalid counting date format. Use DD/MM/YYYY');
     }
 
-    const endYear = parseInt(match[1]);
-    const reviewStartDate = new Date(`April 1, ${endYear - 1}`);
-    const reviewEndDate = new Date(`March 31, ${endYear}`);
+    // Calculate anniversaries in IST
+    const fourthAnniversary = moment(hireDate).add(4, 'years');
+    const tenthAnniversary = moment(hireDate).add(10, 'years');
 
-    const hireDate = new Date(employee.date_of_joining);
-    console.log("employee.date_of_joining",employee);
-    console.log("hireDate",hireDate)
-    console.log("reviewStartDate",reviewStartDate)
-    console.log("reviewEndDate",reviewEndDate)
-
-    // Check 4th and 10th anniversaries
-    const fourthAnniversary = new Date(hireDate);
-    fourthAnniversary.setFullYear(hireDate.getFullYear() + 4);
-
-    const tenthAnniversary = new Date(hireDate);
-    tenthAnniversary.setFullYear(hireDate.getFullYear() + 10);
-    console.log("fourthAnniversary",fourthAnniversary)
-    console.log("tenthAnniversary",tenthAnniversary)
-
-    const completes4Years = fourthAnniversary >= reviewStartDate && fourthAnniversary <= reviewEndDate;
-    const completes10Years = tenthAnniversary >= reviewStartDate && tenthAnniversary <= reviewEndDate;
+    // Check if anniversaries are on or before the counting date
+    const completes4Years = fourthAnniversary.isSameOrBefore(countingDate);
+    const completes10Years = tenthAnniversary.isSameOrBefore(countingDate);
 
     return completes4Years || completes10Years;
   } catch (error) {
@@ -361,7 +351,6 @@ const isOlderEmployee = async (id, reviewCycle) => {
 
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
     try {
-      console.log(normalizedRating,employeeId,reviewCycle)
       const result = await db('increment_measurements')
         .select('increment_range', 'increment_percentage')
         .where('increment_range', '>=', normalizedRating)
@@ -369,12 +358,16 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .first(); 
 
       if (result) {
-        // const isOlder = await isOlderEmployee(employeeId,reviewCycle);
-        // if (isOlder) {  
-        //     const percentage = parseFloat(result.increment_percentage);
-        //     const updatedPercentage = percentage + 10;
-        //     result.increment_percentage = updatedPercentage; // Add 10% for employees with more than 3 years of experience
-        // }
+        const isOlder = await isOlderEmployee(employeeId,`30/04/${reviewCycle.split('-')[1].split(' ')[1]}`); // Assuming reviewCycle is in format 'Apr-2024'
+        if (isOlder) {  
+            const percentage = parseFloat(result.increment_percentage);
+           
+            const updatedPercentage = percentage + 10;
+            await db('increment_details')
+            .where('employee_id', employeeId)
+            .andWhere('appraisal_cycle', reviewCycle)
+            .update('inc_adjustments', updatedPercentage);
+        }
         await db('increment_details')
         .where('employee_id', employeeId)
         .andWhere('appraisal_cycle', reviewCycle)
