@@ -1,38 +1,37 @@
 const db = require('../config/db');
 const moment = require('moment-timezone');
 
-const getIncrementData = async(offset, limit, sortBy, sortOrder) => {
+const getIncrementData = async (offset, limit, sortBy, sortOrder) => {
     try {
-        const rowOffset = offset * limit; // offset is page index (0-based)
-        console.log("page offset (pageIndex):", offset);
-        console.log("limit:", limit);
-        console.log("rowOffset (for DB):", rowOffset);
+        const rowOffset = offset * limit;
 
-        const incrementData = await db
-            .select("*")
-            .from(function () {
-                this.select("id.*")
-                    .from("increment_details as id")
-                    .whereRaw(`
-                        RIGHT(appraisal_cycle, 4) = (
-                            SELECT MAX(RIGHT(appraisal_cycle, 4)) 
-                            FROM increment_details 
-                            WHERE employee_id = id.employee_id
-                        )
-                    `)
-                    .as("latest_increment");
-            })
+        //Get all distinct appraisal cycles
+        const allCycles = db('increment_details')
+            .distinct('appraisal_cycle')
+            .where('appraisal_cycle', 'like', 'April%-Mar%');
+
+        //Find the maximum (latest) appraisal cycle
+        const maxCycle = db.select(db.raw('MAX(appraisal_cycle) as latest_cycle'))
+            .from(allCycles.as('all_cycles'));
+
+        // Get all records matching this maximum cycle with pagination
+        const incrementData = await db('increment_details')
+            .select('*')
+            .where('appraisal_cycle', db.raw('(?)', [maxCycle]))
             .offset(rowOffset)
             .limit(limit)
-            .orderByRaw("CAST(RIGHT(appraisal_cycle, 4) AS INTEGER) DESC")
             .modify((queryBuilder) => {
                 if (sortBy && sortOrder) {
                     queryBuilder.orderBy(sortBy, sortOrder);
+                } else {
+                    queryBuilder.orderBy('employee_id', 'asc');
                 }
             });
 
-        const totalCount = await db("increment_details")
-            .countDistinct("employee_id as total");
+        // Count total records in the latest cycle
+        const totalCount = await db('increment_details')
+            .count('* as total')
+            .where('appraisal_cycle', db.raw('(?)', [maxCycle]));
 
         return {
             totalCount: totalCount[0].total,
@@ -351,7 +350,7 @@ const isOlderEmployee = async (id, countingDateStr) => {
 
 const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
     try {
-      const result = await db('increment_measurements')
+      const result = await db('new_increment_measurements')
         .select('increment_range', 'increment_percentage')
         .where('increment_range', '>=', normalizedRating)
         .orderBy('increment_range', 'asc')

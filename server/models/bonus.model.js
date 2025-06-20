@@ -2,48 +2,43 @@ const db = require('../config/db');
 const moment  = require('moment');
 
 const getBonus = async (offset, limit, sortBy = 'employee_id', sortByOrder = 'asc') => {
-    const rowOffset = offset * limit; // offset is page index (0-based)
-    console.log("page offset (pageIndex):", offset);
-    console.log("limit:", limit);
-    console.log("rowOffset (for DB):", rowOffset);
+    const rowOffset = offset * limit;
+    
     try {
-        const bonusData = await db
-            .select("*")
-            .from(function () {
-                this.select("bd.*")
-                    .from("bonus_details as bd")
-                    .modify((queryBuilder) => {
-                        queryBuilder.whereRaw(`
-                            RIGHT(review_cycle, 4) = (
-                                SELECT MAX(RIGHT(review_cycle, 4)) 
-                                FROM bonus_details 
-                                WHERE employee_id = bd.employee_id
-                            )
-                        `);
-                    })
-                    .as("filtered_bonus"); // Alias for filtered dataset
-            })
+        // Get all distinct review cycles
+        const allCycles = db('bonus_details')
+            .distinct('review_cycle')
+            .where('review_cycle', 'like', 'April%-Sep%');
+
+        // Find the maximum (latest) review cycle
+        const maxCycle = db.select(db.raw('MAX(review_cycle) as latest_cycle'))
+            .from(allCycles.as('all_cycles'));
+
+        // Get all records matching this maximum cycle with pagination
+        const bonusData = await db('bonus_details')
+            .select('*')
+            .where('review_cycle', db.raw('(?)', [maxCycle]))
             .offset(rowOffset)
             .limit(limit)
-            .orderByRaw("CAST(RIGHT(review_cycle, 4) AS INTEGER) DESC")
+            .orderBy('employee_id', sortByOrder) // Default sort
             .modify((queryBuilder) => {
-                if (sortBy && sortByOrder) {
+                if (sortBy !== 'employee_id') { // Only modify if sorting by other field
                     queryBuilder.orderBy(sortBy, sortByOrder);
                 }
             });
 
-        // Get total count for pagination
-        const totalCountQuery = db("bonus_details").countDistinct("employee_id as total");
-
-        const totalCount = await totalCountQuery;
+        // Count total records in the latest cycle
+        const totalCount = await db('bonus_details')
+            .count('* as total')
+            .where('review_cycle', db.raw('(?)', [maxCycle]));
 
         return {
             totalCount: totalCount[0].total,
             data: bonusData,
         };
     } catch (error) {
-        console.error(error);
-        throw new Error("Error fetching bonuses", error.message)
+        console.error("Error fetching bonuses:", error);
+        throw new Error("Error fetching bonuses: " + error.message);
     }
 };
 
@@ -250,7 +245,7 @@ const updateNormalizedRating = async(id,reviewCycle,ratings) => {
 
 const calculateBonus = async (normalizedRating, id, reviewCycle) => {
     try {
-        const result = await db('bonus_measurements')
+        const result = await db('new_bonus_measurements')
             .select('ratings', 'bonus')
             .where('ratings', '>=', normalizedRating)
             .first();
