@@ -140,7 +140,7 @@ const getPickLists = async (reviewCycle)=>{
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    for (let i = 1; i < data.length; i++){
+    for (let i = 0; i < data.length; i++){
 
       let row = data[i];
 
@@ -198,11 +198,10 @@ const calculateAverage =(values)=>{
   }
   function calculateStandardDeviation(values) {
     try {
-      
+    console.log("values",values, values.length);
     if (!values || values.length === 0) return 0;
 
     const mean = calculateAverage(values);
-    console.log("values",values)
     const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
     const meanSquaredDiff = calculateAverage(squaredDiffs);
     return Math.sqrt(meanSquaredDiff);
@@ -270,8 +269,8 @@ const calculateBonusRating = async (data)=>{
     
         
           const STDEVP =  calculateStandardDeviation([ratings,...peerRatings]);
+          console.log("STDEVP",STDEVP);
           const allRatings = await getAllRatings(reviewCycle);
-          console.log("allRatings",allRatings);
           const mean = await meanCalculation(STDEVP,ratings,peerRatings,allRatings,managerName,reviewCycle);
 
           console.log("mean",mean);

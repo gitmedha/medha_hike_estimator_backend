@@ -345,7 +345,7 @@ const uploadExcelFile = async (req) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    for (let i = 1; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
     let row = data[i];
 
     // const dataObj = {
