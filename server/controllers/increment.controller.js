@@ -131,11 +131,13 @@ const getIncrementData = async (req, res) => {
     const { normalizedRating ,employeeId,reviewCycle} = req.body;
     try {
       const result = await incrementService.getIncrement(normalizedRating,employeeId,reviewCycle);
+console.log("Increment Result:", result);
       if (result.length === 0) {
         return res.status(404).json({ message: 'Increment not found' });
       }
       return res.status(200).json({ message:"Inrement calculated successfully", data: `${result}%` });
     } catch (err) {
+      console.error('Error fetching increment:', err);
       return res.status(500).json({ error: err.message });
     }
   }

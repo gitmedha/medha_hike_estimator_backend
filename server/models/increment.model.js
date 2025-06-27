@@ -355,12 +355,12 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .where('increment_range', '>=', normalizedRating)
         .orderBy('increment_range', 'asc')
         .first(); 
-
+console.log("result", result, "normalizedRating", normalizedRating, "employeeId", employeeId, "reviewCycle", reviewCycle);
       if (result) {
         const isOlder = await isOlderEmployee(employeeId,`30/04/${reviewCycle.split('-')[1].split(' ')[1]}`); // Assuming reviewCycle is in format 'Apr-2024'
         if (isOlder) {  
             const percentage = parseFloat(result.increment_percentage);
-           
+           console.log("rating", normalizedRating, "percentage", percentage, "appraisal_cycle", reviewCycle);
             const updatedPercentage = percentage + 10;
             await db('increment_details')
             .where('employee_id', employeeId)
@@ -371,6 +371,7 @@ const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
         .where('employee_id', employeeId)
         .andWhere('appraisal_cycle', reviewCycle)
         .update('increment', result.increment_percentage);
+        console.log("rating", normalizedRating, result, "appraisal_cycle", reviewCycle);
         return result.increment_percentage;
       }
 
