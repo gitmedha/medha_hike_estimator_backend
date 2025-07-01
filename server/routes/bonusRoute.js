@@ -1,5 +1,4 @@
 const express = require('express');
-const upload = require('../middlewares/multer');
 
 const router = express.Router();
 
@@ -25,6 +24,8 @@ const {
     getAllBonusesByReview,
     transferBonusToHistorical
 } = require('../controllers/bonus.controller');
+
+const validateExcel = require('../middlewares/excelUploadAndValidate');
 
 // Fetch all bonus data
 router.get('/get_bonuses/:limit/:offset/:sortBy/:sortOrder', fetchAllBonus);
@@ -66,7 +67,7 @@ router.post('/calculate_bonus',calculateBonus);
 
 // Upload bonus excel data
 
-router.post('/upload_bonus_data', upload.single('file'),uploadBonusFile);
+router.post('/upload_bonus_data',validateExcel,uploadBonusFile);
 
 // Bulk Rating
 

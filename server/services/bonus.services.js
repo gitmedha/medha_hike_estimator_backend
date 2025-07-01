@@ -134,15 +134,43 @@ const getPickLists = async (reviewCycle)=>{
  const uploadBonusData = async (req) => {
   try {
 
-    const filePath = req.file.path;
-    const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    const data = req.excelData;
+    if (!data || data.length === 0) {
+      throw new Error("No data found in Excel");
+    }
 
-    for (let i = 0; i < data.length; i++){
+    const reviewCycle = data[0]['Appraisal Cycle'];
+    if (!reviewCycle) {
+      throw new Error("Missing Appraisal Cycle in Excel data");
+    }
 
-      let row = data[i];
+    // ✅ Check if data already exists for this review cycle
+    const existing = await db('bonus_details')
+      .where('review_cycle', reviewCycle)
+      .first();
+
+    if (existing) {
+      throw new Error(`Data for review cycle "${reviewCycle}" already exists.`);
+    }
+    
+  
+    for (const row of data) {
+      const dataObj = {
+        id: row.Employee.split(' ')[0],
+        name: `${row.Employee.split(' ')[1]} ${row.Employee.split(' ')[2]}`,
+        manager: `${row.Reviewer.split(' ')[1]} ${row.Reviewer.split(' ')[2]}`,
+        average: parseFloat(row['Final Score']),
+        kra: parseFloat(row['KRA vs GOALS']),
+        competency: parseFloat(row.Competency),
+        review_cycle: row['Appraisal Cycle']
+      };
+      
+      await insertBulkData(dataObj);
+    }
+
+    // for (let i = 0; i < data.length; i++){
+
+    //   let row = data[i];
 
     //   const dataObj = {
     //     id: row.__EMPTY,
@@ -162,21 +190,21 @@ const getPickLists = async (reviewCycle)=>{
     //   break;
     // }
     
-    const dataObj = {};
+  //   const dataObj = {};
   
   
-    let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer.split(" ");
+  //   let employeeInfo = row.Employee.split(" ");
+  //   let managerInfo = row.Reviewer.split(" ");
 
-    dataObj.id = `${employeeInfo[0]}`;
-    dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-    dataObj.average = parseFloat(row['Final Score']);
-    dataObj.kra = parseFloat(row['KRA vs GOALS']);
-    dataObj.competency = parseFloat(row.Competency);
-    dataObj.review_cycle = row['Appraisal Cycle'];
-  await insertBulkData(dataObj);
-    }
+  //   dataObj.id = `${employeeInfo[0]}`;
+  //   dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
+  //   dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
+  //   dataObj.average = parseFloat(row['Final Score']);
+  //   dataObj.kra = parseFloat(row['KRA vs GOALS']);
+  //   dataObj.competency = parseFloat(row.Competency);
+  //   dataObj.review_cycle = row['Appraisal Cycle'];
+  // await insertBulkData(dataObj);
+    // }
     return { message: "Data uploaded and inserted successfully!" };
 
   } catch (error) {
