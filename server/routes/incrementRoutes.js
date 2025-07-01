@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const incrementController = require('../controllers/increment.controller');
-const upload = require('../middlewares/multer');
+const validateExcel = require('../middlewares/excelUploadAndValidate');
+
 
 
 // Route to fetch paginated and sorted increment data
@@ -48,7 +49,7 @@ router.get('/calculate_bulk_increment',incrementController.getBulkIncrement);
 
 router.get('/download_excel', incrementController.downloadExcelFile);
 
-router.post('/upload_excel', upload.single('file'), incrementController.uploadExcelFile);
+router.post('/upload_excel', validateExcel, incrementController.uploadExcelFile);
 
 router.get('/calculate_bulk_weighted_increment', incrementController.getBulkWeightedIncrement);
 

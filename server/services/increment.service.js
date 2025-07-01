@@ -339,14 +339,47 @@ const getBulkIncrement = async (reviewCycle)=>{
 const uploadExcelFile = async (req) => {
   try {
 
-    const filePath = req.file.path;
-    const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    const data = req.excelData;
+    if (!data || data.length === 0) {
+      throw new Error("No data found in Excel");
+    }
 
-    for (let i = 0; i < data.length; i++) {
-    let row = data[i];
+    const reviewCycle = data[0]['Appraisal Cycle'];
+    if (!reviewCycle) {
+      throw new Error("Missing Appraisal Cycle in Excel data");
+    }
+
+    // ✅ Check if data already exists for this review cycle
+    const existing = await db('increment_details')
+      .where('appraisal_cycle', reviewCycle)
+      .first();
+
+    if (existing) {
+      throw new Error(`Data for review cycle "${reviewCycle}" already exists.`);
+    }
+    
+  
+    for (const row of data) {
+      const dataObj = {
+        employee_id: row.Employee.split(' ')[0],
+        full_name: `${row.Employee.split(' ')[1]} ${row.Employee.split(' ')[2]}`,
+        manager: `${row.Reviewer.split(' ')[1]} ${row.Reviewer.split(' ')[2]}`,
+        average: parseFloat(row['Final Score']),
+        kra_vs_goals: parseFloat(row['KRA vs GOALS']),
+        compentency: parseFloat(row.Competency),
+        appraisal_cycle: row['Appraisal Cycle']
+      };
+      
+      await db('increment_details').insert(dataObj);
+    }
+    // const filePath = req.file.path;
+    // const workbook = xlsx.readFile(filePath);
+    // const sheetName = workbook.SheetNames[0];
+    // const worksheet = workbook.Sheets[sheetName];
+    // const data = xlsx.utils.sheet_to_json(worksheet);
+
+    // for (let i = 0; i < data.length; i++) {
+    // let row = data[i];
 
     // const dataObj = {
     //   employee_id: row.__EMPTY,
@@ -365,20 +398,7 @@ const uploadExcelFile = async (req) => {
     //   console.log("Breaking")
     //   break;
     // }
-    const dataObj = {};
-
-    let employeeInfo = row.Employee.split(" ");
-    let managerInfo = row.Reviewer.split(" ");
-
-    dataObj.employee_id = `${employeeInfo[0]}`;
-    dataObj.full_name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-    dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-    dataObj.average = parseFloat(row['Final Score']);
-    dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
-    dataObj.compentency = parseFloat(row.Competency);
-    dataObj.appraisal_cycle = row['Appraisal Cycle'];
-    await db('increment_details').insert(dataObj);
-    }
+    // }
     return { message: "Data uploaded and inserted successfully!" };
   } catch (err) {
     console.error(err);
