@@ -25,7 +25,7 @@ const {
     transferBonusToHistorical
 } = require('../controllers/bonus.controller');
 
-const { excelUploadAndValidate } = require('../middlewares/excelUploadAndValidate');
+const validateExcel = require('../middlewares/excelUploadAndValidate');
 
 // Fetch all bonus data
 router.get('/get_bonuses/:limit/:offset/:sortBy/:sortOrder', fetchAllBonus);
@@ -67,7 +67,7 @@ router.post('/calculate_bonus',calculateBonus);
 
 // Upload bonus excel data
 
-router.post('/upload_bonus_data',excelUploadAndValidate,uploadBonusFile);
+router.post('/upload_bonus_data',validateExcel,uploadBonusFile);
 
 // Bulk Rating
 
