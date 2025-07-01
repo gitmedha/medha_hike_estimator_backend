@@ -339,8 +339,24 @@ const getBulkIncrement = async (reviewCycle)=>{
 const uploadExcelFile = async (req) => {
   try {
 
-    
     const data = req.excelData;
+    if (!data || data.length === 0) {
+      throw new Error("No data found in Excel");
+    }
+
+    const reviewCycle = data[0]['Appraisal Cycle'];
+    if (!reviewCycle) {
+      throw new Error("Missing Appraisal Cycle in Excel data");
+    }
+
+    // ✅ Check if data already exists for this review cycle
+    const existing = await db('increment_details')
+      .where('appraisal_cycle', reviewCycle)
+      .first();
+
+    if (existing) {
+      throw new Error(`Data for review cycle "${reviewCycle}" already exists.`);
+    }
     
   
     for (const row of data) {

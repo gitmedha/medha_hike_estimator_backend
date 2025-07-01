@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const incrementController = require('../controllers/increment.controller');
-const upload = require('../middlewares/multer');
-const validateExcel = require('./middlewares/excelUploadMiddleware');
+const validateExcel = require('../middlewares/excelUploadAndValidate');
 
 
 
