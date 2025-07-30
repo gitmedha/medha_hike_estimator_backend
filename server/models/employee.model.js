@@ -8,9 +8,8 @@ const db = require('../config/db');
  * @param {string} sortOrder - The sort order of the employees data
  * @returns {object} - The employee data and total count
  */
-const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
- 
-  const employees = await db('employee_details')
+const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue) => {
+  const query = db('employee_details')
     .select(
       'employee_id',
       'first_name',
@@ -23,17 +22,30 @@ const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
       'employee_type',
       'id'
     )
-    .orderBy(sortBy,sortOrder)
+    .orderBy(sortBy, sortOrder)
     .limit(limit)
     .offset(offset);
 
-  const totalCount = await db('employee_details').count('id as total').first();
+  // Add filtering condition
+  if (searchField && searchValue) {
+    query.where(searchField, '=', searchValue);
+  }
+
+  const employees = await query;
+
+  // total count with filter
+  const countQuery = db('employee_details');
+  if (searchField && searchValue) {
+    countQuery.where(searchField, '=', searchValue);
+  }
+  const totalCount = await countQuery.count('id as total').first();
 
   return {
     totalCount: totalCount.total,
     data: employees,
   };
 };
+
 
 /**
  * Fetch employee
@@ -70,7 +82,6 @@ const getEmployeebyID  = async (id) => {
     if (employee.date_of_joining && typeof employee.date_of_joining === 'string') {
       employee.date_of_joining = employee.date_of_joining.split('T')[0];
     }
-console.log("employee---",employee)
     return employee;
 
   } catch (error) {

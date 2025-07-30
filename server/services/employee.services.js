@@ -12,9 +12,8 @@ const db = require('../config/db');
  * @param {string} sortOrder - The sort order of the employees data
  * @returns {object} - The paginated employee data and total count
  */
-const getEmployeesService = async (offset, limit,sortBy,sortOrder) => {
-
-  const result = await employeeModel.getEmployeesQuery(limit, offset,sortBy,sortOrder);
+const getEmployeesService = async (offset, limit, sortBy, sortOrder, searchField, searchValue) => {
+  const result = await employeeModel.getEmployeesQuery(limit, offset, sortBy, sortOrder, searchField, searchValue);
 
   if (result.data && Array.isArray(result.data)) {
     for (let i = 0; i < result.data.length; i++) {
@@ -26,13 +25,13 @@ const getEmployeesService = async (offset, limit,sortBy,sortOrder) => {
     }
   }
 
-
   return {
     total: result.totalCount,
     limit,
     data: result.data
   };
 };
+
 
 const getEmployeeByID = async (id)=>{
   const employee = await employeeModel.getEmployeebyID(id);
