@@ -79,7 +79,7 @@ console.log("employee---",employee)
   }
 };
 
-const searchEmployees = async (searchField, searchValue, limit, size) => {
+const searchEmployees = async (searchField, searchValue, limit, offset) => {
   try {
     const sortColumn = [
       'first_name',
@@ -90,27 +90,42 @@ const searchEmployees = async (searchField, searchValue, limit, size) => {
       'employee_status',
       'employee_type',
       'employee_id'
-    ].includes(searchValue)
-      ? searchValue
-      : 'first_name';
+    ].includes(searchValue) ? searchValue : 'first_name';
 
     if (searchField === "date_of_joining") {
       const { from, to } = searchValue;
+      
+      // Check if from and to dates are the same
+      console.log("from", from, "to", to)
+      const isSameDate = from === to;
+      console.log("isSameDate",isSameDate)
 
-      const employees = await db('employee_details')
+      let query = db('employee_details')
         .select([
           '*',
           db.raw(`TO_CHAR(date_of_joining, 'YYYY-MM-DD') AS date_of_joining`)
         ])
-        .whereBetween('date_of_joining', [from, to])
         .orderBy(sortColumn, 'asc')
         .limit(limit)
-        .offset(size * limit);
+        .offset(offset);
 
-      const totalCount = await db('employee_details')
-        .count('* as count')
-        .whereBetween('date_of_joining', [from, to])
-        .first();
+      let countQuery = db('employee_details')
+        .count('* as count');
+
+      if (isSameDate) {
+        // For same date, use where clause for exact match
+        query = query.where(db.raw(`TO_CHAR(date_of_joining, 'YYYY-MM-DD')`), '=', from);
+        countQuery = countQuery.where(db.raw(`TO_CHAR(date_of_joining, 'YYYY-MM-DD')`), '=', from);
+      } else {
+        // For different dates, use whereBetween
+        query = query.whereBetween('date_of_joining', [from, to]);
+        countQuery = countQuery.whereBetween('date_of_joining', [from, to]);
+      }
+
+      const [employees, totalCount] = await Promise.all([
+        query,
+        countQuery.first()
+      ]);
 
       return {
         data: employees,
@@ -132,7 +147,7 @@ const searchEmployees = async (searchField, searchValue, limit, size) => {
         .where(Field, `${searchValue}`)
         .orderBy(sortColumn, 'asc')
         .limit(limit)
-        .offset(size * limit);
+        .offset(offset);
 
       const totalCount = await db('employee_details')
         .count('* as count')
