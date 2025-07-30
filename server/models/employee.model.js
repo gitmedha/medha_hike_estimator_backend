@@ -41,14 +41,43 @@ const getEmployeesQuery = async (limit, offset,sortBy,sortOrder) => {
  * @returns {object} - The employee data
  */
 
-const getEmployeebyID = async(id) => {
-  const employee = await db('employee_details').select("*").where('id', id);
-  const experienceInMonths = Number(employee[0].experience);
-  const experienceInYears = (experienceInMonths / 12).toFixed(1);
-  employee[0].experience = experienceInYears;
+const getEmployeebyID  = async (id) => {
+  try {
+    const employees = await db('employee_details')
+      .select("*")
+      .where('id', id);
 
-  return employee;
-}
+    if (!employees || employees.length === 0) {
+      throw new Error("Employee not found");
+    }
+
+    const employee = employees[0];
+
+    if (employee.date_of_joining) {
+      const joinDate = new Date(employee.date_of_joining);
+      const today = new Date();
+
+      // Calculate difference in months
+      const monthsDiff = 
+        (today.getFullYear() - joinDate.getFullYear()) * 12 +
+        (today.getMonth() - joinDate.getMonth());
+
+      employee.experience = (monthsDiff / 12).toFixed(1) + " years";
+    } else {
+      employee.experience = "N/A (No join date)";
+    }
+
+    if (employee.date_of_joining && typeof employee.date_of_joining === 'string') {
+      employee.date_of_joining = employee.date_of_joining.split('T')[0];
+    }
+console.log("employee---",employee)
+    return employee;
+
+  } catch (error) {
+    console.error("Error fetching employee:", error);
+    throw error;
+  }
+};
 
 const searchEmployees = async (searchField, searchValue, limit, size) => {
   try {
