@@ -30,20 +30,29 @@ const createEmployee = async(req, res) => {
  */
 const getEmployees = async (req, res) => {
   try {
-
     const offset = parseInt(req.query.offset) || 0;
     const limit = parseInt(req.query.limit) || 10;
     const sortBy = req.query.sortBy || 'employee_id';
     const sortOrder = req.query.sortOrder || 'asc';
 
-    const result = await employeeService.getEmployeesService(offset,limit,sortBy,sortOrder);
+    const searchField = req.query.searchField || '';
+    const searchValue = req.query.searchValue || '';
+
+    const result = await employeeService.getEmployeesService(
+      offset,
+      limit,
+      sortBy,
+      sortOrder,
+      searchField,
+      searchValue
+    );
 
     res.status(200).json(result);
   } catch (error) {
-
     res.status(500).json({ error: 'Error fetching employees', details: error.message });
   }
 };
+
 
 const getEmployee = async (req,res)=>{
   try {
