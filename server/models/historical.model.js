@@ -94,8 +94,8 @@ totalCount: totalCount.count
 
 const getHistoricalPickList = async()=>{
   try {
-    const employee = await db('historical_data').select('employee').distinct().offset(0).limit(100);
-    const reviewer = await db('historical_data').select('reviewer').distinct().offset(0).limit(100);
+    const employee = await db('historical_data').select('employee').distinct();
+    const reviewer = await db('historical_data').select('reviewer').distinct();
     return {
       employee,
       reviewer,

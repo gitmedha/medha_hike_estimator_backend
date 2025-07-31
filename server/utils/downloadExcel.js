@@ -31,6 +31,29 @@ const tableColumnsMap = {
         {header:'Current Salary', key:'current_salary'},
         {header:'New Band', key:'new_band'},
         {header:'New Salary', key:'new_salary'},
+    ],
+    historical_data: [
+        { header: 'Employee', key: 'employee' },
+        { header: 'Reviewer', key: 'reviewer' },
+        { header: 'KRA vs Goals', key: 'kra_vs_goals' },
+        { header: 'Competency', key: 'competency' },
+        { header: 'Final Score', key: 'final_score' },
+        { header: 'Start Month', key: 'start_month' },
+        { header: 'Ending Month', key: 'ending_month' }
+    ],
+    employee_details: [
+        { header: 'Employee ID', key: 'employee_id' },
+        { header: 'First Name', key: 'first_name' },
+        { header: 'Last Name', key: 'last_name' },
+        { header: 'Email ID', key: 'email_id' },
+        { header: 'Department', key: 'department' },
+        { header: 'Title', key: 'title' },
+        { header: 'Date of Joining', key: 'date_of_joining' },
+        { header: 'Employee Status', key: 'employee_status' },
+        { header: 'Employee Type', key: 'employee_type' },
+        { header: 'Experience', key: 'experience' },
+        { header: 'Current Band', key: 'current_band' },
+        { header: 'Gross Monthly Salary/ Fee (Rs.)', key: 'gross_monthly_salary_or_fee_rs' }
     ]
 };
 
