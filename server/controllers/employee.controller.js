@@ -37,6 +37,8 @@ const getEmployees = async (req, res) => {
 
     const searchField = req.query.searchField || '';
     const searchValue = req.query.searchValue || '';
+    const from = req.query.from;
+    const to = req.query.to;
 
     const result = await employeeService.getEmployeesService(
       offset,
@@ -44,7 +46,9 @@ const getEmployees = async (req, res) => {
       sortBy,
       sortOrder,
       searchField,
-      searchValue
+      searchValue,
+      from,
+      to
     );
 
     res.status(200).json(result);
