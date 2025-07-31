@@ -6,9 +6,8 @@ const db = require('../config/db');
  * @param {number} offset - The number of records to skip
  * @returns {object} - The historical data and total count
  */
-const getHistoricalQuery = async (limit, offset,sortBy,sortOrder) => {
- 
-  const historicalData = await db('historical_data')
+const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue, from, to) => {
+  const query = db('historical_data')
     .select(
       'employee',
       'reviewer',
@@ -19,10 +18,51 @@ const getHistoricalQuery = async (limit, offset,sortBy,sortOrder) => {
       'ending_month',
       'id'
     )
-    .orderBy(sortBy,sortOrder)
+    .orderBy(sortBy, sortOrder)
     .limit(limit)
     .offset(offset);
-  const totalCount = await db('historical_data').count('id as total').first();
+
+  // Add filtering condition
+  if (searchField) {
+    if (searchField === 'start_month' || searchField === 'ending_month') {
+      if (from && to) {
+        if (from === to) {
+          // Exact date search
+          query.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [from]));
+        } else {
+          // Date range search
+          query.whereBetween(db.raw('DATE(??)', [searchField]), 
+            [db.raw('DATE(?)', [from]), db.raw('DATE(?)', [to])]);
+        }
+      } else if (searchValue) {
+        query.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [searchValue]));
+      }
+    } else if (searchValue) {
+      query.where(searchField, '=', searchValue);
+    }
+  }
+
+  const historicalData = await query;
+  const countQuery = db('historical_data');
+
+  if (searchField) {
+    if (searchField === 'start_month' || searchField === 'ending_month') {
+      if (from && to) {
+        if (from === to) {
+          countQuery.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [from]));
+        } else {
+          countQuery.whereBetween(db.raw('DATE(??)', [searchField]), 
+            [db.raw('DATE(?)', [from]), db.raw('DATE(?)', [to])]);
+        }
+      } else if (searchValue) {
+        countQuery.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [searchValue]));
+      }
+    } else if (searchValue) {
+      countQuery.where(searchField, '=', searchValue);
+    }
+  }
+
+  const totalCount = await countQuery.count('id as total').first();
 
   return {
     totalCount: totalCount.total,

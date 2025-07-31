@@ -8,9 +8,17 @@ const xlsx = require('xlsx');
  * @param {number} limit - The number of historical data to fetch per page
  * @returns {object} - historical  data and total count
  */
-const getHistoricalDataService = async (offset, limit,sortBy,sortOrder) => {
-
-  const result = await historicalModel.getHistoricalQuery(limit, offset,sortBy,sortOrder);
+const getHistoricalDataService = async (offset, limit, sortBy, sortOrder, searchField, searchValue, from, to) => {
+  const result = await historicalModel.getHistoricalQuery(
+    limit, 
+    offset, 
+    sortBy, 
+    sortOrder,
+    searchField,
+    searchValue,
+    from,
+    to
+  );
 
   return {
     total: result.totalCount,
