@@ -245,7 +245,7 @@ const updateNormalizedRating = async(id,reviewCycle,ratings) => {
 
 const calculateBonus = async (normalizedRating, id, reviewCycle) => {
     try {
-        const result = await db('new_bonus_measurements')
+        const result = await db('bonus_measurements')
             .select('ratings', 'bonus')
             .where('ratings', '>=', normalizedRating)
             .first();
