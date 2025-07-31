@@ -47,10 +47,14 @@ const searchPickList = async (dropDownField) => {
   try {
     
   const result = await historicalModel.searchPickList(dropDownField);
-  return result.map(historic => ({
-    label: historic[dropDownField],
-    value: historic[dropDownField]
-  }));    
+
+  return result
+      .filter(historic => historic[dropDownField] && historic[dropDownField].length > 0)
+      .map(historic => ({
+        label: historic[dropDownField],
+        value: historic[dropDownField]
+      }));
+    
   } catch (error) {
     console.log(error);
     throw new Error(error.message);
