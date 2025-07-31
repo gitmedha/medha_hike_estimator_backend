@@ -6,7 +6,7 @@ const db = require('../config/db');
  * @param {number} offset - The number of records to skip
  * @returns {object} - The historical data and total count
  */
-const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue, from, to) => {
+const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue) => {
   const query = db('historical_data')
     .select(
       'employee',
@@ -23,43 +23,17 @@ const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField,
     .offset(offset);
 
   // Add filtering condition
-  if (searchField) {
-    if (searchField === 'start_month' || searchField === 'ending_month') {
-      if (from && to) {
-        if (from === to) {
-          // Exact date search
-          query.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [from]));
-        } else {
-          // Date range search
-          query.whereBetween(db.raw('DATE(??)', [searchField]), 
-            [db.raw('DATE(?)', [from]), db.raw('DATE(?)', [to])]);
-        }
-      } else if (searchValue) {
-        query.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [searchValue]));
-      }
-    } else if (searchValue) {
+  if (searchField && searchValue) {
       query.where(searchField, '=', searchValue);
-    }
+
   }
 
   const historicalData = await query;
+  
+  // Total count query
   const countQuery = db('historical_data');
-
-  if (searchField) {
-    if (searchField === 'start_month' || searchField === 'ending_month') {
-      if (from && to) {
-        if (from === to) {
-          countQuery.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [from]));
-        } else {
-          countQuery.whereBetween(db.raw('DATE(??)', [searchField]), 
-            [db.raw('DATE(?)', [from]), db.raw('DATE(?)', [to])]);
-        }
-      } else if (searchValue) {
-        countQuery.where(db.raw('DATE(??)', [searchField]), '=', db.raw('DATE(?)', [searchValue]));
-      }
-    } else if (searchValue) {
-      countQuery.where(searchField, '=', searchValue);
-    }
+  if (searchField && searchValue) {
+   countQuery.where(searchField, '=', searchValue);
   }
 
   const totalCount = await countQuery.count('id as total').first();
