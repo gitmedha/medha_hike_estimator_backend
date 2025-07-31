@@ -59,17 +59,20 @@ const searchEmployees = async (searchField,searchValue,limit,size)=>{
 
 const searchPickList = async (dropDownField) => {
   try {
+    const result = await employeeModel.searchPickList(dropDownField);
     
-  const result = await employeeModel.searchPickList(dropDownField);
-  return result.map(employee => ({
-    label: employee[dropDownField],
-    value: employee[dropDownField]
-  }));    
+    return result
+      .filter(employee => employee[dropDownField] && employee[dropDownField].length > 0)
+      .map(employee => ({
+        label: employee[dropDownField],
+        value: employee[dropDownField]
+      }));
+    
   } catch (error) {
-    console.log(error);
+    console.error("Error in searchPickList:", error);
     throw new Error(error.message);
   }
-}
+};
 const getEmployeeHistoricDetails = async (firstName, lastName,sortBy,sortOrder)=>{
   const result = await employeeModel.getEmployeeHistoricDetails(firstName, lastName,sortBy,sortOrder);
   return result;
