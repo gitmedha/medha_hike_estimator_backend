@@ -6,9 +6,8 @@ const db = require('../config/db');
  * @param {number} offset - The number of records to skip
  * @returns {object} - The historical data and total count
  */
-const getHistoricalQuery = async (limit, offset,sortBy,sortOrder) => {
- 
-  const historicalData = await db('historical_data')
+const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue) => {
+  const query = db('historical_data')
     .select(
       'employee',
       'reviewer',
@@ -19,10 +18,25 @@ const getHistoricalQuery = async (limit, offset,sortBy,sortOrder) => {
       'ending_month',
       'id'
     )
-    .orderBy(sortBy,sortOrder)
+    .orderBy(sortBy, sortOrder)
     .limit(limit)
     .offset(offset);
-  const totalCount = await db('historical_data').count('id as total').first();
+
+  // Add filtering condition
+  if (searchField && searchValue) {
+      query.where(searchField, '=', searchValue);
+
+  }
+
+  const historicalData = await query;
+  
+  // Total count query
+  const countQuery = db('historical_data');
+  if (searchField && searchValue) {
+   countQuery.where(searchField, '=', searchValue);
+  }
+
+  const totalCount = await countQuery.count('id as total').first();
 
   return {
     totalCount: totalCount.total,

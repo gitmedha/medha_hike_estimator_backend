@@ -8,9 +8,17 @@ const xlsx = require('xlsx');
  * @param {number} limit - The number of historical data to fetch per page
  * @returns {object} - historical  data and total count
  */
-const getHistoricalDataService = async (offset, limit,sortBy,sortOrder) => {
-
-  const result = await historicalModel.getHistoricalQuery(limit, offset,sortBy,sortOrder);
+const getHistoricalDataService = async (offset, limit, sortBy, sortOrder, searchField, searchValue, from, to) => {
+  const result = await historicalModel.getHistoricalQuery(
+    limit, 
+    offset, 
+    sortBy, 
+    sortOrder,
+    searchField,
+    searchValue,
+    from,
+    to
+  );
 
   return {
     total: result.totalCount,
@@ -39,10 +47,14 @@ const searchPickList = async (dropDownField) => {
   try {
     
   const result = await historicalModel.searchPickList(dropDownField);
-  return result.map(historic => ({
-    label: historic[dropDownField],
-    value: historic[dropDownField]
-  }));    
+
+  return result
+      .filter(historic => historic[dropDownField] && historic[dropDownField].length > 0)
+      .map(historic => ({
+        label: historic[dropDownField],
+        value: historic[dropDownField]
+      }));
+    
   } catch (error) {
     console.log(error);
     throw new Error(error.message);

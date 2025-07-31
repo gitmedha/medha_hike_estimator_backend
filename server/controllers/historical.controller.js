@@ -8,18 +8,28 @@ const { downloadExcel} = require('../utils/downloadExcel');
  */
 const getHistoricalData = async (req, res) => {
   try {
-
     const offset = parseInt(req.query.offset) || 0;
     const limit = parseInt(req.query.limit) || 10;
-    
     const sortBy = req.query.sortBy || 'employee';
     const sortOrder = req.query.sortOrder || 'asc';
+    const searchField = req.query.searchField || '';
+    const searchValue = req.query.searchValue || '';
+    const from = req.query.from;
+    const to = req.query.to;
 
-    const result = await HistoricalService.getHistoricalDataService(offset,limit,sortBy,sortOrder);
+    const result = await HistoricalService.getHistoricalDataService(
+      offset,
+      limit,
+      sortBy,
+      sortOrder,
+      searchField,
+      searchValue,
+      from,
+      to
+    );
 
     res.status(200).json(result);
   } catch (error) {
-
     res.status(500).json({ error: 'Error fetching Historical data', details: error.message });
   }
 };
