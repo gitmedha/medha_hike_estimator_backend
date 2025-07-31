@@ -111,81 +111,90 @@ const fetchFilterDropdown = async()=>{
         throw new Error(`Error fetching filter dropdown data: ${error.message}`);
     }
 }
-const filterIncrementData = async (fields, values, limit, offset, reviewCycle) => {  
-    try {
-      if (fields.length !== values.length) {
-        throw new Error('Fields and values arrays must have the same length');
-      }
-  
-      const currentDate = new Date();
-  
-      // Base query for data
-      const dataQuery = db('increment_details')
-        .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
-        .select('increment_details.*')
-        .where('increment_details.appraisal_cycle', reviewCycle);
-  
-      // Base query for count
-      const countQuery = db('increment_details')
-        .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
-        .where('increment_details.appraisal_cycle', reviewCycle);
-  
-      for (let i = 0; i < fields.length; i++) {
-        const field = fields[i];
-        const value = values[i];
-  
-        if (field === 'tenure') {
-          const [min, max] = value.split('-').map(Number);
-  
-          dataQuery.whereRaw(
-            `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
-            [currentDate, min, max]
-          );
-          countQuery.whereRaw(
-            `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
-            [currentDate, min, max]
-          );
-        } else if (field === 'current_band') {
-          dataQuery.where('employee_details.current_band', value);
-          countQuery.where('employee_details.current_band', value);
-        } else if (field === 'long_tenure') {
-            
-            const match = reviewCycle.match(/Mar\s+(\d{4})/i);
-            if (!match) throw new Error("Invalid reviewCycle format for long_tenure logic");
-          
-            const reviewYear = parseInt(match[1]);
-            const cutoffDate = new Date(`${reviewYear}-03-31`);
-          
-            if (value === 'Yes') {
-              dataQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) >= 4`, [cutoffDate]);
-              countQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) >= 4`, [cutoffDate]);
-            } else if (value === 'No') {
-              dataQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) < 4`, [cutoffDate]);
-              countQuery.whereRaw(`EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) < 4`, [cutoffDate]);
-            }
-          }
-         else {
-          dataQuery.where(`increment_details.${field}`, value);
-          countQuery.where(`increment_details.${field}`, value);
-        }
-      }
-  
-  
-      const data = await dataQuery.limit(limit).offset(offset);
-      const countResult = await countQuery.count('* as total');
-      const total = parseInt(countResult[0].total, 10);
-  
-      return {
-        total,
-        data,
-      };
-    } catch (err) {
-      throw new Error(`Error filtering increment data: ${err.message}`);
+
+const filterIncrementData = async (fields, values, limit, offset, reviewCycle) => {
+  try {
+    if (fields.length !== values.length) {
+      throw new Error('Fields and values arrays must have the same length');
     }
-  };
-  
-  
-  
+
+    const cutoffDate = new Date('2025-03-31');
+
+    // Base query for data
+    const dataQuery = db('increment_details')
+      .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
+      .select('increment_details.*', 'employee_details.date_of_joining')
+      .where('increment_details.appraisal_cycle', reviewCycle);
+
+      // console.log('dataQuery:', dataQuery.toString());
+
+    // Base query for count
+    const countQuery = db('increment_details')
+      .join('employee_details', 'increment_details.employee_id', 'employee_details.employee_id')
+      .where('increment_details.appraisal_cycle', reviewCycle);
+
+    for (let i = 0; i < fields.length; i++) {
+      const field = fields[i];
+      const value = values[i];
+
+      if (field === 'tenure') {
+        const [min, max] = value.split('-').map(Number);
+
+        dataQuery.whereRaw(
+          `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
+          [cutoffDate, min, max]
+        );
+        countQuery.whereRaw(
+          `EXTRACT(YEAR FROM AGE(?, employee_details.date_of_joining)) BETWEEN ? AND ?`,
+          [cutoffDate, min, max]
+        );
+      } else if (field === 'current_band') {
+        dataQuery.where('employee_details.current_band', value);
+        countQuery.where('employee_details.current_band', value);
+      } else if (field === 'long_tenure') {
+  const minYears = 4;
+  const minMonths = minYears * 12;
+
+  console.log("value",value)
+  if (value === 'Yes') {
+    console.log("value is yes")
+    dataQuery.whereRaw(
+      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
+       DATE_PART('month', AGE(?, employee_details.date_of_joining)) >= ?`,
+      [cutoffDate, cutoffDate, minMonths]
+    );
+    countQuery.whereRaw(
+      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
+       DATE_PART('month', AGE(?, employee_details.date_of_joining)) >= ?`,
+      [cutoffDate, cutoffDate, minMonths]
+    );
+  } else if (value === 'No') {
+    dataQuery.whereRaw(
+      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
+       DATE_PART('month', AGE(?, employee_details.date_of_joining)) < ?`,
+      [cutoffDate, cutoffDate, minMonths]
+    );
+    countQuery.whereRaw(
+      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
+       DATE_PART('month', AGE(?, employee_details.date_of_joining)) < ?`,
+      [cutoffDate, cutoffDate, minMonths]
+    );
+  }
+}
+}
+
+    const data = await dataQuery.limit(limit).offset(offset);
+    const countResult = await countQuery.count('* as total');
+    const total = parseInt(countResult[0].total, 10);
+
+    return {
+      total,
+      data,
+    };
+  } catch (err) {
+    throw new Error(`Error filtering increment data: ${err.message}`);
+  }
+};
 
 const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
     try{
