@@ -8,7 +8,7 @@ const db = require('../config/db');
  * @param {string} sortOrder - The sort order of the employees data
  * @returns {object} - The employee data and total count
  */
-const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue) => {
+const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, searchValue, from, to) => {
   const query = db('employee_details')
     .select(
       'employee_id',
@@ -26,18 +26,57 @@ const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, 
     .limit(limit)
     .offset(offset);
 
+  console.log("Search params:", { searchField, searchValue, from, to });
+
   // Add filtering condition
-  if (searchField && searchValue) {
-    query.where(searchField, '=', searchValue);
+  if (searchField) {
+    if (searchField === 'date_of_joining') {
+      if (from && to) {
+        console.log("Date range search:", { from, to });
+        
+        // Convert dates to proper format
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+        
+        if (from === to) {
+          // Exact date search
+          console.log("Exact date search:", fromDate);
+          query.where(db.raw('DATE(date_of_joining)'), '=', db.raw('DATE(?)', [fromDate]));
+        } else {
+          // Date range search
+          query.whereBetween(db.raw('DATE(date_of_joining)'), 
+            [db.raw('DATE(?)', [fromDate]), db.raw('DATE(?)', [toDate])]);
+        }
+      }
+    } else if (searchValue) {
+      // Non-date field search
+      query.where(searchField, '=', searchValue);
+    }
   }
 
+  console.log("Final query:", query.toString());
   const employees = await query;
 
   // total count with filter
   const countQuery = db('employee_details');
-  if (searchField && searchValue) {
-    countQuery.where(searchField, '=', searchValue);
+  if (searchField) {
+    if (searchField === 'date_of_joining') {
+      if (from && to) {
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+        
+        if (from === to) {
+          countQuery.where(db.raw('DATE(date_of_joining)'), '=', db.raw('DATE(?)', [fromDate]));
+        } else {
+          countQuery.whereBetween(db.raw('DATE(date_of_joining)'), 
+            [db.raw('DATE(?)', [fromDate]), db.raw('DATE(?)', [toDate])]);
+        }
+      }
+    } else if (searchValue) {
+      countQuery.where(searchField, '=', searchValue);
+    }
   }
+  
   const totalCount = await countQuery.count('id as total').first();
 
   return {
@@ -45,8 +84,6 @@ const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, 
     data: employees,
   };
 };
-
-
 /**
  * Fetch employee
  * @param {number} id - the employee id
