@@ -113,6 +113,8 @@ const fetchFilterDropdown = async()=>{
 }
 
 const filterIncrementData = async (fields, values, limit, offset, reviewCycle) => {
+  let longTenuresEmployees = [];
+  let shortTenuresEmployees = [];
   try {
     if (fields.length !== values.length) {
       throw new Error('Fields and values arrays must have the same length');
@@ -126,7 +128,6 @@ const filterIncrementData = async (fields, values, limit, offset, reviewCycle) =
       .select('increment_details.*', 'employee_details.date_of_joining')
       .where('increment_details.appraisal_cycle', reviewCycle);
 
-      // console.log('dataQuery:', dataQuery.toString());
 
     // Base query for count
     const countQuery = db('increment_details')
@@ -152,34 +153,25 @@ const filterIncrementData = async (fields, values, limit, offset, reviewCycle) =
         dataQuery.where('employee_details.current_band', value);
         countQuery.where('employee_details.current_band', value);
       } else if (field === 'long_tenure') {
-  const minYears = 4;
-  const minMonths = minYears * 12;
+        console.log("tenures", value)
+        if (value === 'Yes') {
+          longTenuresEmployees = await db('employee_details')
+            .select('employee_id')
+            .whereRaw(`EXTRACT(YEAR FROM AGE(?, date_of_joining)) >= 4`, [cutoffDate]);
+            const longTenureIds = longTenuresEmployees.map(e => e.employee_id);
+            console.log("Long Tenure Employees:", longTenureIds);
+            dataQuery.whereIn('increment_details.employee_id', longTenureIds);
+            countQuery.whereIn('increment_details.employee_id', longTenureIds);
+        }
+        else {
+          shortTenuresEmployees = await db('employee_details')
+            .select('employee_id')
+            .whereRaw(`EXTRACT(YEAR FROM AGE(?, date_of_joining)) < 4`, [cutoffDate]);
+            const shortTenureIds = shortTenuresEmployees.map(e => e.employee_id);
+            dataQuery.whereIn('increment_details.employee_id', shortTenureIds);
+            countQuery.whereIn('increment_details.employee_id', shortTenureIds);
+        }
 
-  console.log("value",value)
-  if (value === 'Yes') {
-    console.log("value is yes")
-    dataQuery.whereRaw(
-      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
-       DATE_PART('month', AGE(?, employee_details.date_of_joining)) >= ?`,
-      [cutoffDate, cutoffDate, minMonths]
-    );
-    countQuery.whereRaw(
-      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
-       DATE_PART('month', AGE(?, employee_details.date_of_joining)) >= ?`,
-      [cutoffDate, cutoffDate, minMonths]
-    );
-  } else if (value === 'No') {
-    dataQuery.whereRaw(
-      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
-       DATE_PART('month', AGE(?, employee_details.date_of_joining)) < ?`,
-      [cutoffDate, cutoffDate, minMonths]
-    );
-    countQuery.whereRaw(
-      `DATE_PART('year', AGE(?, employee_details.date_of_joining)) * 12 + 
-       DATE_PART('month', AGE(?, employee_details.date_of_joining)) < ?`,
-      [cutoffDate, cutoffDate, minMonths]
-    );
-  }
 }
 }
 
