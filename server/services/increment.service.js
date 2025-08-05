@@ -2,9 +2,9 @@ const incrementModel =  require('../models/increment.model');
 const db = require('../config/db');
 const xlsx = require('xlsx');
 
-const fetchIncrementData = async (offset, limit, sortBy, sortOrder) => {
+const fetchIncrementData = async (offset, limit, sortBy, sortOrder, filters={}) => {
     try {
-        const result = await incrementModel.getIncrementData(offset, limit, sortBy, sortOrder);
+        const result = await incrementModel.getIncrementData(offset, limit, sortBy, sortOrder, filters);
         return result;
     } catch (err) {
         throw new Error(`Service Error: Unable to fetch increment data. ${err.message}`);

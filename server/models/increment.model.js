@@ -1,7 +1,7 @@
 const db = require('../config/db');
 const moment = require('moment-timezone');
 
-const getIncrementData = async (offset, limit, sortBy, sortOrder) => {
+const getIncrementData = async (offset, limit, sortBy, sortOrder, filters={}) => {
     try {
         const rowOffset = offset * limit;
 
@@ -159,7 +159,6 @@ const filterIncrementData = async (fields, values, limit, offset, reviewCycle) =
             .select('employee_id')
             .whereRaw(`EXTRACT(YEAR FROM AGE(?, date_of_joining)) >= 4`, [cutoffDate]);
             const longTenureIds = longTenuresEmployees.map(e => e.employee_id);
-            console.log("Long Tenure Employees:", longTenureIds);
             dataQuery.whereIn('increment_details.employee_id', longTenureIds);
             countQuery.whereIn('increment_details.employee_id', longTenureIds);
         }
@@ -188,33 +187,52 @@ const filterIncrementData = async (fields, values, limit, offset, reviewCycle) =
   }
 };
 
-const searchIncrementData = async(searchField,value,offset,limit,reviewCycle)=>{
-    try{
+const searchIncrementData = async (searchField, value, offset, limit, reviewCycle) => {
+    try {
+        // Input Validation & Sanitization
+        searchField = searchField?.trim();
+        reviewCycle = reviewCycle?.trim();
+        
+        if (!searchField || !reviewCycle) {
+            throw new Error('searchField and reviewCycle are required');
+        }
+
+        // Explicitly allow only known columns
+        const allowedColumns = new Set([
+            "employee_id", "full_name", "kra_vs_goals", "compentency",
+            "manager", "average", "normalize_rating", "appraisal_cycle",
+            "weighted_increment", "current_band", "new_band", "long_tenure",
+            "new_salary", "inc_adjustments", "increment", "current_salary",
+            "tenure", "review_type"
+        ]);
+
+        if (!allowedColumns.has(searchField)) {
+            throw new Error(`Invalid searchField: "${searchField}"`);
+        }
+
         const incrementData = await db('increment_details')
-        .select("*")
-        .where(searchField,`${value}`)
-        .andWhere('appraisal_cycle', reviewCycle)
-        .offset(offset)
-        .limit(limit);
+            .select('*')
+            .where(db.raw('?? = ?', [searchField, value])) 
+            .andWhere(db.raw('appraisal_cycle = ?', [reviewCycle]))
+            .offset(offset)
+            .limit(limit);
 
+        // Get total count (for pagination)
         const totalCountResult = await db('increment_details')
-        .where(searchField,`${value}`)
-        .andWhere('appraisal_cycle', reviewCycle)
-        .count('* as total');
-
-        const totalCount = totalCountResult[0].total;
+            .where(db.raw('?? = ?', [searchField, value]))
+            .andWhere(db.raw('appraisal_cycle = ?', [reviewCycle]))
+            .count('* as total');
 
         return {
-            totalCount,
+            totalCount: totalCountResult[0].total,
             data: incrementData,
         };
 
-    }catch(err){
-        console.log("error", err)
-        throw new Error(`Error searching increment data: ${err.message}`);
+    } catch (err) {
+        console.error('Database query failed:', err.message);
+        throw new Error(`Failed to fetch data: ${err.message}`);
     }
-}
-
+};
 const getSearchDropdowns = async(Field,reviewCycle) => {
     try{
         const searchDropdowns = await db('increment_details')

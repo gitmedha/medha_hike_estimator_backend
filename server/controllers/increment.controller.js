@@ -7,8 +7,18 @@ const db = require('../config/db');
 
 const getIncrementData = async (req, res) => {
     const { offset, limit, sortBy, sortOrder } = req.params;
+    const filters = req.query; 
+    let result;
+    console.log("filters",filters)
+    
     try {
-      const result = await incrementService.fetchIncrementData(Number(offset), Number(limit), sortBy, sortOrder);
+      if(Object.keys(req.query).length > 0){
+       result = await incrementService.fetchIncrementData(Number(offset), Number(limit), sortBy, sortOrder,filters);
+
+      }else {
+       result = await incrementService.fetchIncrementData(Number(offset), Number(limit), sortBy, sortOrder);
+
+      }
       return res.status(200).json(result);
     } catch (err) {
       console.error('Error fetching increment data:', err.message);
@@ -131,7 +141,6 @@ const getIncrementData = async (req, res) => {
     const { normalizedRating ,employeeId,reviewCycle} = req.body;
     try {
       const result = await incrementService.getIncrement(normalizedRating,employeeId,reviewCycle);
-console.log("Increment Result:", result);
       if (result.length === 0) {
         return res.status(404).json({ message: 'Increment not found' });
       }
