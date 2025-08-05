@@ -9,7 +9,6 @@ const getIncrementData = async (req, res) => {
     const { offset, limit, sortBy, sortOrder } = req.params;
     const filters = req.query; 
     let result;
-    console.log("filters",filters)
     
     try {
       if(Object.keys(req.query).length > 0){
