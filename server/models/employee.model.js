@@ -20,7 +20,8 @@ const getEmployeesQuery = async (limit, offset, sortBy, sortOrder, searchField, 
       'date_of_joining',
       'employee_status',
       'employee_type',
-      'id'
+      'id',
+      'profile_pic'
     )
     .orderBy(sortBy, sortOrder)
     .limit(limit)
