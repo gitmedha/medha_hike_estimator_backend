@@ -37,7 +37,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/historical_data',historicalRoutes);
 app.use('/api/increments',incrementalRoutes);
 app.use('/api/bonuses',bonuses);
-app.use('/auth/zoho',zohoRoutes);
+app.use('/api/zoho',zohoRoutes);
 app.use('/webhook',webHooks);
 
 // Error handling middleware
