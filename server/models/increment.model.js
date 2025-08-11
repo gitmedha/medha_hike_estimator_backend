@@ -367,44 +367,53 @@ const isOlderEmployee = async (id, countingDateStr) => {
 
   
 
-const getIncrement = async (normalizedRating,employeeId,reviewCycle)=> {
-    try {
-      let increment={};
-      if(normalizedRating>2){
-        increment.increment_percentage = 12.00
-      }
-      else {
-        
+const getIncrement = async (normalizedRating, employeeId, reviewCycle) => {
+  try {
+    let increment = {};
+    
+    if (normalizedRating > 2) {
+      increment.increment_percentage = 12.00;
+    } else {
       increment = await db('new_increment_measurements')
         .select('increment_range', 'increment_percentage')
         .where('increment_range', '>=', normalizedRating)
         .orderBy('increment_range', 'asc')
-        .first(); 
-      }
-      if (increment) {
-        const isOlder = await isOlderEmployee(employeeId,`30/04/${reviewCycle.split('-')[1].split(' ')[1]}`); // Assuming reviewCycle is in format 'Apr-2024'
-        if (isOlder) {  
-            const percentage = parseFloat(increment.increment_percentage);
-            const updatedPercentage = percentage + 10;
-            await db('increment_details')
-            .where('employee_id', employeeId)
-            .andWhere('appraisal_cycle', reviewCycle)
-            .update('inc_adjustments', updatedPercentage);
-        }
+        .first();
+    }
+
+    if (increment) {
+      const isOlder = await isOlderEmployee(
+        employeeId,
+        `30/04/${reviewCycle.split('-')[1].split(' ')[1]}`
+      );
+
+      let percentage = parseFloat(increment.increment_percentage);
+
+      if (isOlder) {
+        percentage += 10;
+        percentage = parseFloat(percentage.toFixed(2)); // ensures 2 decimal places
         await db('increment_details')
-        .where('employee_id', employeeId)
-        .andWhere('appraisal_cycle', reviewCycle)
-        .update('increment', increment.increment_percentage);
-        return increment.increment_percentage;
+          .where('employee_id', employeeId)
+          .andWhere('appraisal_cycle', reviewCycle)
+          .update('inc_adjustments', percentage);
       }
 
-  
-      return null;
-    } catch (error) {
-      console.error('Error querying the database:', error);
-      throw error;
+      percentage = parseFloat(increment.increment_percentage).toFixed(2); // keeps "xx.xx" format
+      await db('increment_details')
+        .where('employee_id', employeeId)
+        .andWhere('appraisal_cycle', reviewCycle)
+        .update('increment', percentage);
+
+      return percentage;
     }
+
+    return null;
+  } catch (error) {
+    console.error('Error querying the database:', error);
+    throw error;
   }
+};
+
 
 const updateNormalizedRatings = async (employeeID,rating,reviewCycle) =>{
     try{
@@ -421,57 +430,57 @@ const updateNormalizedRatings = async (employeeID,rating,reviewCycle) =>{
 }
 
   
-  const getWeightedIncrement = async (employee_id, review_cycle) => {
-    try {
-        
-      if (!employee_id || !review_cycle) {
-        throw new Error('Invalid employee_id or review_cycle');
-      }
-      
-  
-      // Fetch the latest increment record for the employee
-      const incrementRecord = await db('increment_details')
-        .select("*")
-        .where('employee_id', employee_id)
-        .andWhere('appraisal_cycle', review_cycle)
-        .first();
-  
-      if (!incrementRecord) {
-        throw new Error('No increment record found for the given review cycle');
-      }
-
-  
-      // Extract the increment year (last 4 digits)
-      const incrementYearMatch = incrementRecord.appraisal_cycle.match(/\d{4}$/);
-      if (!incrementYearMatch) {
-        throw new Error('Invalid increment review cycle format');
-      }
-      const incrementYear = parseInt(incrementYearMatch[0]); // e.g., 2024
-  
-      // Fetch the most recent past bonus where the ending year is LESS THAN the current increment year
-      const pastBonusRecord = await db('bonus_details')
-        .select("*")
-        .where('employee_id', employee_id)
-        .andWhereRaw(`CAST(RIGHT(review_cycle, 4) AS INT) < ?`, [incrementYear])
-        .orderByRaw(`CAST(RIGHT(review_cycle, 4) AS INT) DESC`)
-        .first();
-  
-      if (!pastBonusRecord || !pastBonusRecord.bonus) {
-        return parseFloat(incrementRecord.increment).toFixed(2); // Return only the current increment if no past bonus exists
-      }
-  
-      const currentIncrement = parseFloat(incrementRecord.increment);
-      const pastBonus = parseFloat(pastBonusRecord.bonus);
-  
-      // Calculate weighted increment
-      const weightedIncrement = (pastBonus * 0.33334) + (currentIncrement * 0.66667);
-      return weightedIncrement.toFixed(2);
-  
-    } catch (err) {
-      console.error('Error in getWeightedIncrement:', err);
-      throw new Error('Error fetching weighted increment');
+ const getWeightedIncrement = async (employee_id, review_cycle) => {
+  try {
+    if (!employee_id || !review_cycle) {
+      throw new Error('Invalid employee_id or review_cycle');
     }
-  };
+
+    // Fetch the latest increment record for the employee
+    const incrementRecord = await db('increment_details')
+      .select("*")
+      .where('employee_id', employee_id)
+      .andWhere('appraisal_cycle', review_cycle)
+      .first();
+
+    if (!incrementRecord) {
+      throw new Error('No increment record found for the given review cycle');
+    }
+
+    // Extract the increment year (last 4 digits)
+    const incrementYearMatch = incrementRecord.appraisal_cycle.match(/\d{4}$/);
+    if (!incrementYearMatch) {
+      throw new Error('Invalid increment review cycle format');
+    }
+    const incrementYear = parseInt(incrementYearMatch[0]); // e.g., 2024
+
+    // Fetch the most recent past bonus where the ending year is LESS THAN the current increment year
+    const pastBonusRecord = await db('bonus_details')
+      .select("*")
+      .where('employee_id', employee_id)
+      .andWhereRaw(`CAST(RIGHT(review_cycle, 4) AS INT) < ?`, [incrementYear])
+      .orderByRaw(`CAST(RIGHT(review_cycle, 4) AS INT) DESC`)
+      .first();
+
+    // If no past bonus exists, return increment with 2 decimal places
+    if (!pastBonusRecord || !pastBonusRecord.bonus) {
+      return parseFloat(incrementRecord.increment).toFixed(2);
+    }
+
+    const currentIncrement = parseFloat(incrementRecord.increment);
+    const pastBonus = parseFloat(pastBonusRecord.bonus);
+
+    // Calculate weighted increment
+    const weightedIncrement = (pastBonus * 0.33334) + (currentIncrement * 0.66667);
+
+    return parseFloat(weightedIncrement.toFixed(2)).toFixed(2); // ensures "xx.xx" format
+
+  } catch (err) {
+    console.error('Error in getWeightedIncrement:', err);
+    throw new Error('Error fetching weighted increment');
+  }
+};
+
   
 
 
