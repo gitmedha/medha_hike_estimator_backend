@@ -26,9 +26,6 @@ const fetchIncrementDataById = async (id,review_cycle) => {
 
   const createNewIncrementData = async (data) => {
     try {
-      data.appraisal_cycle = `April ${data.from_review_cycle.split(" ")[1]} - Mar ${data.to_review_cycle.split(" ")[1]}`;
-      delete data.from_review_cycle;
-      delete data.to_review_cycle;
       const newIncrementId = await incrementModel.createIncrementData(data);
       return { id: newIncrementId, message: 'Increment data created successfully' };
     } catch (err) {
