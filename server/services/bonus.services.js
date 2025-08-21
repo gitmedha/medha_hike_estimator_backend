@@ -62,9 +62,6 @@ const fetchAllBonusService = async(offset,limit,sortBy,sortByOrder)=>{
  }
 
  const createBonusService = async(bonusData)=>{
-      bonusData.review_cycle = `Mar ${bonusData.from_review_cycle.split(" ")[1]} - Sep ${bonusData.to_review_cycle.split(" ")[1]}`;
-      delete bonusData.from_review_cycle;
-      delete bonusData.to_review_cycle;
     try{
         const result = await createBonus(bonusData);
         return result;
