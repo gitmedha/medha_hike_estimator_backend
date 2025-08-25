@@ -65,6 +65,8 @@ router.get('/get_increment_by_appraisal_cycle',incrementController.getIncrementD
 
 router.get('/transfer_increment_to_historical/:review_cycle', incrementController.transferIncrementToHistorical);
 
+router.get('/get_picklist_values/:field', incrementController.getPicklistValues);
+
 
 
 
