@@ -78,22 +78,72 @@ const getEmployeeHistoricDetails = async (firstName, lastName,sortBy,sortOrder)=
   return result;
 }
 
-const getEmployeeDropDowns = async ()=>{
+// Utility to convert Roman numerals → numbers
+const romanToInt = (roman) => {
+  if (!roman) return 0;
+  const map = { I:1, V:5, X:10, L:50, C:100, D:500, M:1000 };
+  let num = 0;
+  roman = roman.toUpperCase(); // case-insensitive
+  for (let i = 0; i < roman.length; i++) {
+    const cur = map[roman[i]];
+    const next = map[roman[i + 1]];
+    if (next && cur < next) {
+      num -= cur;
+    } else {
+      num += cur;
+    }
+  }
+  return num;
+};
+
+const getEmployeeDropDowns = async () => {
   const result = await employeeModel.getDropDownValues();
   try {
-    
-  const modifiedDoc = {};
-  modifiedDoc.titles = result.title.map(title=>({label:title.title, value: title.title}));
-  modifiedDoc.departments = result.department.map(department=> ({label:department.department, value:department.department}))
-  modifiedDoc.employeeTypes = result.employeeType.map(employeeType=> ({label:employeeType.employee_type, value:employeeType.employee_type}))
-  modifiedDoc.currentBands = result.currentBand.map(currentBand=> ({label:currentBand.current_band, value:currentBand.current_band}))
-  return modifiedDoc;
-    
+    const modifiedDoc = {};
+
+    // Titles (sorted alphabetically)
+    modifiedDoc.titles = result.title
+      .filter(title => title?.title && title.title.trim() !== "")
+      .map(title => {
+        const value = title.title.trim();
+        return { label: value, value };
+      })
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+    // Departments (sorted alphabetically)
+    modifiedDoc.departments = result.department
+      .filter(department => department?.department && department.department.trim() !== "")
+      .map(department => {
+        const value = department.department.trim();
+        return { label: value, value };
+      })
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+    // Employee Types (sorted alphabetically)
+    modifiedDoc.employeeTypes = result.employeeType
+      .filter(employeeType => employeeType?.employee_type && employeeType.employee_type.trim() !== "")
+      .map(employeeType => {
+        const value = employeeType.employee_type.trim();
+        return { label: value, value };
+      })
+      .sort((a, b) => a.value.localeCompare(b.value));
+
+    // Current Bands (sorted by Roman numeral value)
+    modifiedDoc.currentBands = result.currentBand
+      .filter(currentBand => currentBand?.current_band && currentBand.current_band.trim() !== "")
+      .map(currentBand => {
+        const value = currentBand.current_band.trim();
+        return { label: value, value };
+      })
+      .sort((a, b) => romanToInt(a.value) - romanToInt(b.value));
+
+    return modifiedDoc;
   } catch (error) {
     console.log(error);
-    throw new Error("Error while processing values"+ error.message);
+    throw new Error("Error while processing values: " + error.message);
   }
-}
+};
+
 
 const checkIfExists = async(employeeID)=>{
   try {
