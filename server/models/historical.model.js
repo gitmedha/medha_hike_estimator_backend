@@ -49,33 +49,56 @@ const getHistoricDatabyID = async(id) => {
   return historicData;
 }
 
-const searchHistoric = async(searchField,searchValue,limit,size)=>{
+const searchHistoric = async (searchField, searchValue, limit, size) => {
   try {
-    const sortColumn = ['employee', 'reviewer', 'kra_vs_goals', 'competency', 'final_score', 'start_month', 'ending_month','id'].includes(searchValue)
-    ? searchValue
-    : 'employee';
-    const historics = await db('historical_data')
-    .select("*")
-    .where(`${searchField}`,`${searchValue}`)
-    .orderBy(sortColumn,'asc')
-    .limit(limit)
-    .offset(size*limit);
+    let query = db("historical_data").select("*");
 
-const totalCount = await db('historical_data')
-    .count('* as count')
-    .where(`${searchField}`,`${searchValue}`)
-    .first();
+    // Special case: range search for specific fields
+    if (["final_score", "kra_vs_goals", "competency"].includes(searchField)) {
+      const [min, max] = searchValue.split("-").map(Number);
+      query = query.whereBetween(searchField, [min, max]);
+    } else {
+      query = query.where(searchField, searchValue);
+    }
 
-return {
-data:historics,
-totalCount: totalCount.count
-};
-  
+    // Sorting column check
+    const sortColumn = [
+      "employee",
+      "reviewer",
+      "kra_vs_goals",
+      "competency",
+      "final_score",
+      "start_month",
+      "ending_month",
+      "id",
+    ].includes(searchField)
+      ? searchField
+      : "employee";
+
+    // Pagination
+    const historics = await query.orderBy(sortColumn, "asc").limit(limit).offset(size * limit);
+
+    // Total count
+    let countQuery = db("historical_data").count("* as count");
+    if (["final_score", "kra_vs_goals", "competency"].includes(searchField)) {
+      const [min, max] = searchValue.split("-").map(Number);
+      countQuery = countQuery.whereBetween(searchField, [min, max]);
+    } else {
+      countQuery = countQuery.where(searchField, searchValue);
+    }
+
+    const totalCount = await countQuery.first();
+
+    return {
+      data: historics,
+      totalCount: totalCount.count,
+    };
   } catch (error) {
-    console.log(error)
-    throw new Error(error.message);
+    console.log(error);
+    throw new Error("Error while searching historics: " + error.message);
   }
-  }
+};
+
   
   const searchPickList = async (dropField)=>{
   
