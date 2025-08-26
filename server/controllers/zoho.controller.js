@@ -75,123 +75,202 @@ const refreshZohoAccessToken = async () => {
     }
 };
 // Function to get employee details from Zoho
+/** ---------------------------
+ * Sync employees + increment_details
+ * --------------------------*/
 // This function will handle pagination and return all employee records
 const getEmployeeDetailsFromZoho = async (req, res) => {
-    let allRecords = [];
-    let from = 0;
-    const limit = 200;
+  let allRecords = [];
+  let from = 0;
+  const limit = 200;
 
-    try {
-        let accessToken = process.env.ZOHO_ACCESS_TOKEN;
+  try {
+    let accessToken = process.env.ZOHO_ACCESS_TOKEN;
 
-        if (!accessToken) {
-            return res.status(400).json({ success: false, message: "Missing Zoho access token" });
+    if (!accessToken) {
+      return res.status(400).json({ success: false, message: "Missing Zoho access token" });
+    }
+
+    const headers = {
+      Authorization: `Zoho-oauthtoken ${accessToken}`
+    };
+
+    while (true) {
+      try {
+        const response = await axios.get(
+          `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`,
+          { headers }
+        );
+
+        const records = response.data;
+        if (!records) break;
+
+        // When the API returns { response: { status: 0, result: { <pages> } } }
+        if (!records.response?.status) {
+          const employees = Object.values(records.response.result || {})
+            .flatMap(employeeObj => Object.values(employeeObj || {}).flat());
+
+          if (!employees.length) break;
+
+          allRecords = allRecords.concat(employees);
+          from += limit;
+        } else {
+          // Non-zero status indicates end or error
+          break;
         }
 
-        const headers = {
-            Authorization: `Zoho-oauthtoken ${accessToken}`
-        };
-
-        while (true) {
-            try {
-                const response = await axios.get(
-                    `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`,
-                    { headers }
-                );
-
-                const records = response.data;
-                if (!records || records.length === 0) break;
-
-                if (!records.response.status) {
-                    const employees = Object.values(records.response.result)
-                        .flatMap(employeeObj => Object.values(employeeObj).flat());
-
-                    allRecords = allRecords.concat(employees);
-                    from += limit;
-                } else {
-                    break;
-                }
-
-            } catch (error) {
-                if (error.response?.status === 401) {
-                    console.log("🔄 Access token expired, refreshing...");
-                    await refreshZohoAccessToken();
-                    return res.status(401).json({
-                        success: false,
-                        message: "Access token expired and refreshed. Please click refresh again."
-                    });
-                }
-                console.error("Error fetching employee data:", error.response?.data || error.message);
-                break;
-            }
+      } catch (error) {
+        if (error.response?.status === 401) {
+          console.log("🔄 Access token expired, refreshing...");
+          await refreshZohoAccessToken();
+          return res.status(401).json({
+            success: false,
+            message: "Access token expired and refreshed. Please click refresh again."
+          });
         }
+        console.error("Error fetching employee data:", error.response?.data || error.message);
+        break;
+      }
+    }
 
-        console.log("✅ Total employees fetched:", allRecords.length);
+    console.log("✅ Total employees fetched:", allRecords.length);
 
-        // 🔹 Upsert employees
-        for (const employee of allRecords) {
-            const {
-                EmployeeID,
-                FirstName,
-                LastName,
-                EmailID,
-                Department,
-                Designation,
-                Dateofjoining,
-                Employeestatus,
-                Employee_type,
-                total_experience,
-                Current_Band,
-                GROSSMONTHLY_SALARY_FEE_Rs,
-            } = employee;
+    const appraisalCycle = getCurrentAppraisalCycle();
+    let updatedIncrements = 0;
+    let insertedIncrements = 0;
 
-            await db('employee_details')
-                .insert({
-                    employee_id: EmployeeID,
-                    first_name: FirstName,
-                    last_name: LastName,
-                    email_id: EmailID,
-                    department: Department,
-                    title: Designation,
-                    date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
-                    employee_status: Employeestatus,
-                    employee_type: Employee_type,
-                    experience: total_experience ? parseFloat(total_experience) : null,
-                    current_band: Current_Band,
-                    gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
-                        ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
-                        : null,
-                })
-                .onConflict('employee_id')
-                .merge({
-                    first_name: FirstName,
-                    last_name: LastName,
-                    email_id: EmailID,
-                    department: Department,
-                    title: Designation,
-                    date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
-                    employee_status: Employeestatus,
-                    employee_type: Employee_type,
-                    experience: total_experience ? parseFloat(total_experience) : null,
-                    current_band: Current_Band,
-                    gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
-                        ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
-                        : null
-                });
-        }
+    // 🔹 Upsert employees + sync increment_details for current cycle
+    for (const employee of allRecords) {
+      const {
+        EmployeeID,
+        FirstName,
+        LastName,
+        EmailID,
+        Department,
+        Designation,
+        Dateofjoining,
+        Employeestatus,
+        Employee_type,
+        total_experience,
+        Current_Band,
+        GROSSMONTHLY_SALARY_FEE_Rs,
+      } = employee;
 
-        return res.status(200).json({
-            success: true,
-            message: "Employee details synced successfully",
-            total: allRecords.length
+      // --- Upsert main employee table ---
+      await db('employee_details')
+        .insert({
+          employee_id: EmployeeID,
+          first_name: FirstName,
+          last_name: LastName,
+          email_id: EmailID,
+          department: Department,
+          title: Designation,
+          date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
+          employee_status: Employeestatus,
+          employee_type: Employee_type,
+          experience: total_experience ? parseFloat(total_experience) : null,
+          current_band: Current_Band,
+          gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
+            ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
+            : null,
+        })
+        .onConflict('employee_id')
+        .merge({
+          first_name: FirstName,
+          last_name: LastName,
+          email_id: EmailID,
+          department: Department,
+          title: Designation,
+          date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
+          employee_status: Employeestatus,
+          employee_type: Employee_type,
+          experience: total_experience ? parseFloat(total_experience) : null,
+          current_band: Current_Band,
+          gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
+            ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
+            : null
         });
 
-    } catch (error) {
-        console.error("❌ Error:", error.message);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
-    }
-};
+      // --- Compute tenure + long_tenure ---
+      const tenure = yearsBetween(Dateofjoining); // in years (1 decimal)
+      const longTenure = typeof tenure === 'number' ? tenure >= 4 : false;
 
+      // --- Prepare increment_details payload for current cycle ---
+      const incrementPayload = {
+        employee_id: EmployeeID,
+        appraisal_cycle: appraisalCycle,
+        full_name: `${FirstName || ''} ${LastName || ''}`.trim(),
+        current_band: Current_Band || null,
+        current_salary: GROSSMONTHLY_SALARY_FEE_Rs ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs) : null,
+        tenure: tenure,
+        long_tenure: longTenure,
+      };
+
+      // --- Upsert into increment_details for ONLY the current cycle ---
+      // Using exists -> update/insert so we don't require a DB unique constraint.
+      const existing = await db('increment_details')
+        .select('id')
+        .where({ employee_id: EmployeeID, appraisal_cycle: appraisalCycle })
+        .first();
+
+      if (existing) {
+        await db('increment_details')
+          .update({
+            // Only update fields we know from Zoho to avoid clobbering other process-calculated fields
+            full_name: incrementPayload.full_name,
+            current_band: incrementPayload.current_band,
+            current_salary: incrementPayload.current_salary,
+            tenure: incrementPayload.tenure,
+            long_tenure: incrementPayload.long_tenure,
+            manager: incrementPayload.manager,
+          })
+          .where({ id: existing.id });
+
+        updatedIncrements += 1;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Employee details & increment details synced successfully",
+      totalEmployeesFetched: allRecords.length,
+      appraisalCycle,
+      incrementDetails: {
+        inserted: insertedIncrements,
+        updated: updatedIncrements
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+// Helper to calculate the current appraisal cycle
+
+function getCurrentAppraisalCycle() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1; // 1..12
+
+  // Appraisal cycle runs April -> March
+  if (month >= 4) {
+    // April–Dec
+    return `April ${year-1}-Mar ${year}`;
+  } else {
+    // Jan–Mar
+    return `April ${year - 1}-Mar ${year}`;
+  }
+}
+
+function yearsBetween(startDate) {
+  if (!startDate) return null;
+  const start = new Date(startDate);
+  if (isNaN(start.getTime())) return null;
+  const diffMs = Date.now() - start.getTime();
+  const years = diffMs / (1000 * 60 * 60 * 24 * 365.25);
+  return Number(years.toFixed(1));
+}
 
 
 module.exports ={sendAuthUrl,zohoAuthToken,getEmployeeDetailsFromZoho}

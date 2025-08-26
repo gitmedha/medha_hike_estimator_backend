@@ -523,6 +523,15 @@ const createHistoricalRecord = async (data) => {
     throw new Error('Error creating historical record');
   }
 };
+
+const getPicklistValues = async(field)=>{
+    try{
+        const picklistValues = await db('increment_details').select(field).distinct().whereNotNull(field).orderBy(field,'asc');
+        return picklistValues;
+    }catch(err){
+        throw new Error('Error fetching picklist values for field ' + field);
+    }
+}
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -543,5 +552,6 @@ module.exports = {
     getHistoricalData,
     getAllInrementData,
     getWeightedIncrement,
-    createHistoricalRecord
+    createHistoricalRecord,
+    getPicklistValues
 }

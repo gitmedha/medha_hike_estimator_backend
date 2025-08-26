@@ -295,6 +295,17 @@ const transferIncrementToHistorical = async (req, res) => {
   }
 }
 
+const getPicklistValues = async (req, res) => {
+  const { field } = req.params;
+  try {
+    const result = await incrementService.getPicklistValues(field);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching picklist values:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
     getIncrementData,
     getIncrementDataById,
@@ -319,6 +330,7 @@ module.exports = {
     getAllReviewCycles,
     getAllCycles,
     getIncrementDataByReviewCycle,
-    transferIncrementToHistorical
+    transferIncrementToHistorical,
+    getPicklistValues
 }
 

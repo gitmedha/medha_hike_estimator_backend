@@ -456,6 +456,18 @@ const transferIncrementToHistorical = async (reviewCycle) => {
     throw new Error(`Service Error: Unable to transfer increment data to historical. ${error.message}`);
   }
 }
+
+const getPicklistValues = async(field)=>{
+  try { 
+    const result = await incrementModel.getPicklistValues(field);
+    return result.map((item) => ({
+      label: item[field],
+      value: item[field],
+    }));
+  } catch (error) {
+    throw new Error(`Service Error: ${error.message}`);
+  }
+}
   module.exports = {
     fetchIncrementData,
     fetchIncrementDataById,
