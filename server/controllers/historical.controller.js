@@ -30,6 +30,7 @@ const getHistoricalData = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
+    console.log("error", error);
     res.status(500).json({ error: 'Error fetching Historical data', details: error.message });
   }
 };
