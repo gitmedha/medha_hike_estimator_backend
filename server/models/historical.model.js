@@ -24,16 +24,29 @@ const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField,
 
   // Add filtering condition
   if (searchField && searchValue) {
+    if (['kra_vs_goals', 'competency', 'final_score'].includes(searchField)) {
+      const [min, max] = searchValue.split('-').map(Number);
+      if (!isNaN(min) && !isNaN(max)) {
+        query.whereBetween(searchField, [min, max]);
+      }
+    } else {
       query.where(searchField, '=', searchValue);
-
+    }
   }
 
   const historicalData = await query;
-  
+
   // Total count query
   const countQuery = db('historical_data');
   if (searchField && searchValue) {
-   countQuery.where(searchField, '=', searchValue);
+    if (['kra_vs_goals', 'competency', 'final_score'].includes(searchField)) {
+      const [min, max] = searchValue.split('-').map(Number);
+      if (!isNaN(min) && !isNaN(max)) {
+        countQuery.whereBetween(searchField, [min, max]);
+      }
+    } else {
+      countQuery.where(searchField, '=', searchValue);
+    }
   }
 
   const totalCount = await countQuery.count('id as total').first();
@@ -44,6 +57,7 @@ const getHistoricalQuery = async (limit, offset, sortBy, sortOrder, searchField,
   };
 };
 
+
 const getHistoricDatabyID = async(id) => {
   const historicData = await db('historical_data').select("*").where('id', id);
   return historicData;
@@ -51,7 +65,9 @@ const getHistoricDatabyID = async(id) => {
 
 const searchHistoric = async (searchField, searchValue, limit, size) => {
   try {
+    console.log("woriing")
     let query = db("historical_data").select("*");
+    console.log("searchValue", searchValue)
 
     // Special case: range search for specific fields
     if (["final_score", "kra_vs_goals", "competency"].includes(searchField)) {
@@ -60,7 +76,8 @@ const searchHistoric = async (searchField, searchValue, limit, size) => {
     } else {
       query = query.where(searchField, searchValue);
     }
-
+console.log("searchField", searchField)
+    console.log(query.toString());
     // Sorting column check
     const sortColumn = [
       "employee",
