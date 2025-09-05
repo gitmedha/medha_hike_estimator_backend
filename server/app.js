@@ -3,6 +3,15 @@ const app = express();
 const cors = require('cors');
 const session = require('express-session');
 const pg = require('pg');
+const dbConfig = require('../knexfile')[process.env.NODE_ENV || 'development'];
+
+
+if (!String.prototype.replaceAll) {
+  String.prototype.replaceAll = function (search, replacement) {
+    return this.split(search).join(replacement);
+  };
+}
+
 const PgSession = require('connect-pg-simple')(session);
 
 
@@ -26,27 +35,27 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.set('trust proxy', 1);
-const sessionMiddleware = session({
-  store: new PgSession({
-    conObject: {
-      connectionString: process.env.DATABASE_URL, // if you use a single URL
-      // OR, if you want to use your knexfile config, pass user, host, database, password, port here
-    },
-    tableName: 'user_sessions', // defaults to "session"
-    createTableIfMissing: true  // auto-creates table if not exists
-  }),
-  secret: process.env.SESSION_SECRET || 'supersecretkey',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-    httpOnly: true, // prevents JS access
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-    sameSite: 'lax'
-  }
-});
+app.use(
+  session({
+    store: new PgSession({
+      conObject: dbConfig.connection,
+      tableName: 'user_sessions',
+      createTableIfMissing: true 
+    }),
+    secret: process.env.SESSION_SECRET || 'supersecretkey',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" 
+}
+  })
+);
 
-app.use(sessionMiddleware);
+
+
 
 
 
@@ -68,49 +77,42 @@ app.use('/api/bonuses',bonuses);
 app.use('/api/zoho',zohoRoutes);
 app.use('/webhook',webHooks);
 
-app.get('/api/test-session', (req, res) => {
-  if (req.session.views) {
-    req.session.views++;
-  } else {
-    req.session.views = 1;
-  }
-  res.json({ message: `You have viewed this ${req.session.views} times` });
-});
+
 
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    // If response is already sent, delegate to Express's default error handler
+    return next(err);
+  }
+
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  // Development error handling 
   if (process.env.NODE_ENV === 'development') {
-    res.status(err.statusCode).json({
+    return res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
       error: err,
       stack: err.stack
     });
-  } 
-  // Production error handling
-  else {
-    // Operational, trusted errors: send message to client
+  } else {
     if (err.isOperational) {
-      res.status(err.statusCode).json({
+      return res.status(err.statusCode).json({
         status: err.status,
         message: err.message
       });
-    } 
-    // Programming or other unknown errors
-    else {
+    } else {
       console.error('ERROR 💥', err);
-      res.status(500).json({
+      return res.status(500).json({
         status: 'error',
         message: 'Something went very wrong!'
       });
     }
   }
 });
+
 
 
 module.exports = app;
