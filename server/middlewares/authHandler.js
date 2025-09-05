@@ -1,32 +1,15 @@
 const db = require('../config/db');
 
-const isAdmin = async (req,res,next)=>{
-    try {
-        const user = await db('user_table')
-       .select('isadmin')
-       .where('username', req.body.username);
-       
-         if(!user[0]){
-             return res.status(404).json({ message: "User not found." });
-         }
 
-         
-         if(user[0].isadmin){
-             req.isAdmin = true;
-              return next();
-         }
-         else {
-            req.isAdmin = false
-            return next();
-         }
-        
-    } catch (error) {
-        return res.status(500).json({ error: error.message }); 
-    }
+function isAuthenticated(req, res, next) {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  res.status(401).json({ message: "Unauthorized" });
 }
 
 
 
 module.exports = {
-    isAdmin
+    isAuthenticated
 };
