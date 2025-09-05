@@ -1,134 +1,142 @@
 const axios = require('axios');
 const db = require('../config/db');
+
+/** ---------------------------
+ * Zoho Auth Flow
+ * --------------------------*/
 const sendAuthUrl = async (req, res) => {
-    try {
-        const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZOHOPEOPLE.forms.ALL&client_id=${process.env.ZOHO_CLIENT_ID}&response_type=code&access_type=offline&prompt=consent&redirect_uri=${process.env.ZOHO_REDIRECT_URI}`;
-        res.redirect(authUrl);
-    } catch (error) {
-        console.log(error);
-    }
-
+  try {
+    const authUrl = `https://accounts.zoho.com/oauth/v2/auth?scope=ZOHOPEOPLE.forms.ALL&client_id=${process.env.ZOHO_CLIENT_ID}&response_type=code&access_type=offline&prompt=consent&redirect_uri=${process.env.ZOHO_REDIRECT_URI}`;
+    res.redirect(authUrl);
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-const zohoAuthToken = async(req,res)=>{
-    try{
-        const { code } = req.query;
-        if (!code) {
-            return res.status(400).send("Authorization code not found");
-        }
-
-        const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
-            params: {
-                client_id: process.env.ZOHO_CLIENT_ID,
-                client_secret: process.env.ZOHO_CLIENT_SECRET,
-                code: code,
-                redirect_uri: process.env.ZOHO_REDIRECT_URI,
-                grant_type: 'authorization_code',
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
-console.log(code,'code')
-console.log(response.data,'response')
-
-
-        const { access_token, refresh_token } = response.data;
-        
-        // Store the tokens securely (database or env variable)
-        console.log("Access Token:", access_token);
-        console.log("Refresh Token:", refresh_token);
-
-       return res.send("Zoho Authorization Successful! You can now call APIs.");
-    
-    }catch(error){
-        console.log(error);
+const zohoAuthToken = async (req, res) => {
+  try {
+    const { code } = req.query;
+    if (!code) {
+      return res.status(400).send("Authorization code not found");
     }
-}
 
-// Function to refresh Zoho access token
-// This should be called when the access token expires
+    const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
+      params: {
+        client_id: process.env.ZOHO_CLIENT_ID,
+        client_secret: process.env.ZOHO_CLIENT_SECRET,
+        code: code,
+        redirect_uri: process.env.ZOHO_REDIRECT_URI,
+        grant_type: 'authorization_code',
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    const { access_token, refresh_token } = response.data;
+
+    // Store securely (DB or env)
+    process.env.ZOHO_ACCESS_TOKEN = access_token;
+    process.env.ZOHO_REFRESH_TOKEN = refresh_token;
+
+    console.log("✅ Access Token:", access_token);
+    console.log("✅ Refresh Token:", refresh_token);
+
+    return res.send("Zoho Authorization Successful! You can now call APIs.");
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+    return res.status(500).send("Error getting Zoho access token");
+  }
+};
+
+/** ---------------------------
+ * Token Refresh
+ * --------------------------*/
 const refreshZohoAccessToken = async () => {
-    try {
-        const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
-            params: {
-                grant_type: 'refresh_token',
-                refresh_token: process.env.ZOHO_REFRESH_TOKEN,
-                client_id: process.env.ZOHO_CLIENT_ID,
-                client_secret: process.env.ZOHO_CLIENT_SECRET
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
+  try {
+    const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', null, {
+      params: {
+        grant_type: 'refresh_token',
+        refresh_token: process.env.ZOHO_REFRESH_TOKEN,
+        client_id: process.env.ZOHO_CLIENT_ID,
+        client_secret: process.env.ZOHO_CLIENT_SECRET
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
 
-        const { access_token } = response.data;
-        console.log("✅ New access token generated:", access_token);
+    const { access_token } = response.data;
+    console.log("🔄 New access token generated:", access_token);
 
-        // Save the token (in env or DB)
-        process.env.ZOHO_ACCESS_TOKEN = access_token;
-
-        return access_token;
-    } catch (error) {
-        console.error("❌ Error refreshing access token:", error.response?.data || error.message);
-        throw error;
-    }
+    process.env.ZOHO_ACCESS_TOKEN = access_token;
+    return access_token;
+  } catch (error) {
+    console.error("❌ Error refreshing access token:", error.response?.data || error.message);
+    throw error;
+  }
 };
-// Function to get employee details from Zoho
+
+/** ---------------------------
+ * Zoho API Request Wrapper
+ * --------------------------*/
+const zohoApiRequest = async (method, url, options = {}) => {
+  let accessToken = process.env.ZOHO_ACCESS_TOKEN;
+  try {
+    return await axios({
+      method,
+      url,
+      headers: {
+        Authorization: `Zoho-oauthtoken ${accessToken}`,
+        ...options.headers,
+      },
+      ...options,
+    });
+  } catch (error) {
+    if (error.response?.status === 401) {
+      console.log("⚠️ Access token expired, refreshing...");
+      accessToken = await refreshZohoAccessToken();
+      return await axios({
+        method,
+        url,
+        headers: {
+          Authorization: `Zoho-oauthtoken ${accessToken}`,
+          ...options.headers,
+        },
+        ...options,
+      });
+    }
+    throw error;
+  }
+};
+
 /** ---------------------------
  * Sync employees + increment_details
  * --------------------------*/
-// This function will handle pagination and return all employee records
 const getEmployeeDetailsFromZoho = async (req, res) => {
   let allRecords = [];
   let from = 0;
   const limit = 200;
 
   try {
-    let accessToken = process.env.ZOHO_ACCESS_TOKEN;
-
-    if (!accessToken) {
-      return res.status(400).json({ success: false, message: "Missing Zoho access token" });
-    }
-
-    const headers = {
-      Authorization: `Zoho-oauthtoken ${accessToken}`
-    };
-
     while (true) {
-      try {
-        const response = await axios.get(
-          `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`,
-          { headers }
-        );
+      const response = await zohoApiRequest(
+        'get',
+        `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`
+      );
 
-        const records = response.data;
-        if (!records) break;
+      const records = response.data;
+      if (!records) break;
 
-        // When the API returns { response: { status: 0, result: { <pages> } } }
-        if (!records.response?.status) {
-          const employees = Object.values(records.response.result || {})
-            .flatMap(employeeObj => Object.values(employeeObj || {}).flat());
+      if (!records.response?.status) {
+        const employees = Object.values(records.response.result || {})
+          .flatMap(employeeObj => Object.values(employeeObj || {}).flat());
 
-          if (!employees.length) break;
+        if (!employees.length) break;
 
-          allRecords = allRecords.concat(employees);
-          from += limit;
-        } else {
-          // Non-zero status indicates end or error
-          break;
-        }
-
-      } catch (error) {
-        if (error.response?.status === 401) {
-          console.log("🔄 Access token expired, refreshing...");
-          await refreshZohoAccessToken();
-          return res.status(401).json({
-            success: false,
-            message: "Access token expired and refreshed. Please click refresh again."
-          });
-        }
-        console.error("Error fetching employee data:", error.response?.data || error.message);
+        allRecords = allRecords.concat(employees);
+        from += limit;
+      } else {
         break;
       }
     }
@@ -139,7 +147,6 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
     let updatedIncrements = 0;
     let insertedIncrements = 0;
 
-    // 🔹 Upsert employees + sync increment_details for current cycle
     for (const employee of allRecords) {
       const {
         EmployeeID,
@@ -156,7 +163,6 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
         GROSSMONTHLY_SALARY_FEE_Rs,
       } = employee;
 
-      // --- Upsert main employee table ---
       await db('employee_details')
         .insert({
           employee_id: EmployeeID,
@@ -191,11 +197,9 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
             : null
         });
 
-      // --- Compute tenure + long_tenure ---
-      const tenure = yearsBetween(Dateofjoining); // in years (1 decimal)
+      const tenure = yearsBetween(Dateofjoining);
       const longTenure = typeof tenure === 'number' ? tenure >= 4 : false;
 
-      // --- Prepare increment_details payload for current cycle ---
       const incrementPayload = {
         employee_id: EmployeeID,
         appraisal_cycle: appraisalCycle,
@@ -206,8 +210,6 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
         long_tenure: longTenure,
       };
 
-      // --- Upsert into increment_details for ONLY the current cycle ---
-      // Using exists -> update/insert so we don't require a DB unique constraint.
       const existing = await db('increment_details')
         .select('id')
         .where({ employee_id: EmployeeID, appraisal_cycle: appraisalCycle })
@@ -216,17 +218,18 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
       if (existing) {
         await db('increment_details')
           .update({
-            // Only update fields we know from Zoho to avoid clobbering other process-calculated fields
             full_name: incrementPayload.full_name,
             current_band: incrementPayload.current_band,
             current_salary: incrementPayload.current_salary,
             tenure: incrementPayload.tenure,
             long_tenure: incrementPayload.long_tenure,
-            manager: incrementPayload.manager,
           })
           .where({ id: existing.id });
 
         updatedIncrements += 1;
+      } else {
+        await db('increment_details').insert(incrementPayload);
+        insertedIncrements += 1;
       }
     }
 
@@ -242,23 +245,22 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Error:", error.message);
+    console.error("❌ Error:", error.response?.data || error.message);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-// Helper to calculate the current appraisal cycle
 
+/** ---------------------------
+ * Helpers
+ * --------------------------*/
 function getCurrentAppraisalCycle() {
   const today = new Date();
   const year = today.getFullYear();
-  const month = today.getMonth() + 1; // 1..12
+  const month = today.getMonth() + 1;
 
-  // Appraisal cycle runs April -> March
   if (month >= 4) {
-    // April–Dec
-    return `April ${year-1}-Mar ${year}`;
+    return `April ${year - 1}-Mar ${year}`;
   } else {
-    // Jan–Mar
     return `April ${year - 1}-Mar ${year}`;
   }
 }
@@ -272,5 +274,4 @@ function yearsBetween(startDate) {
   return Number(years.toFixed(1));
 }
 
-
-module.exports ={sendAuthUrl,zohoAuthToken,getEmployeeDetailsFromZoho}
+module.exports = { sendAuthUrl, zohoAuthToken, getEmployeeDetailsFromZoho };
