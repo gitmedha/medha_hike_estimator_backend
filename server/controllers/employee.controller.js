@@ -1,5 +1,6 @@
 const employeeService = require('../services/employee.services');
 const { downloadExcel} = require('../utils/downloadExcel');
+const db = require('../config/db');
 
 /**
  * @param {object} req
@@ -168,31 +169,55 @@ const downloadExcelFile = async (req,res)=>{
   }
 }
 
-const uploadExcelFile = async (req) => {
+const uploadExcelFile = async (req, res) => {
   try {
     // Get the validated data from the request body
-    console.log(req.body);
     const { data: validRows } = req.body;
 
     if (!validRows || !Array.isArray(validRows)) {
-      throw new Error("No valid data received");
+      return res.status(400).json({ 
+        success: false,
+        error: "No valid data received" 
+      });
     }
 
     if (validRows.length === 0) {
-      return { message: "No data to insert", recordsInserted: 0 };
+      return res.status(200).json({ 
+        success: true,
+        message: "No data to insert", 
+        recordsInserted: 0 
+      });
     }
 
     // Insert all valid rows directly
     await db("employee_details").insert(validRows);
     console.log("Data inserted successfully");
 
-    return { 
+    return res.status(200).json({
+      success: true,
       message: "Data inserted successfully!",
       recordsInserted: validRows.length
-    };
+    });
   } catch (err) {
-    console.error(err);
-    throw new Error("Error while inserting data: " + err.message);
+    console.error("Database insertion error:", err);
+    
+    // Check for specific database errors
+    let errorMessage = "Error while inserting data";
+    
+    if (err.code === '23505') { // PostgreSQL unique violation
+      errorMessage = "Duplicate employee ID found. Please check your data.";
+    } else if (err.code === '23502') { // PostgreSQL not null violation
+      errorMessage = "Required fields are missing. Please check your data.";
+    } else if (err.code === '22007') { // PostgreSQL invalid datetime format
+      errorMessage = "Invalid date format. Please use YYYY-MM-DD format.";
+    } else {
+      errorMessage = err.message || "Unknown database error occurred";
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: errorMessage
+    });
   }
 };
 
