@@ -2,9 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const session = require('express-session');
-const pg = require('pg');
 const dbConfig = require('../knexfile')[process.env.NODE_ENV || 'development'];
-
 
 if (!String.prototype.replaceAll) {
   String.prototype.replaceAll = function (search, replacement) {
@@ -14,76 +12,68 @@ if (!String.prototype.replaceAll) {
 
 const PgSession = require('connect-pg-simple')(session);
 
-
-
-//data base connection initialization
+// database connection initialization
 const knex = require('./config/db');
 
-//cors configuration
-
+// cors configuration
 const corsOptions = {
-    origin: process.env.FRONTENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
-    credentials: true,
-  };
-
+  origin: process.env.FRONTENT_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
+  credentials: true,
+};
 
 // Middleware
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.set('trust proxy', 1);
+
+// ✅ Always pass object to connect-pg-simple
+const connection =
+  typeof dbConfig.connection === 'string'
+    ? { connectionString: dbConfig.connection }
+    : dbConfig.connection;
+
 app.use(
   session({
     store: new PgSession({
-      conObject: dbConfig.connection,
+      conObject: connection,
       tableName: 'user_sessions',
-      createTableIfMissing: true 
+      createTableIfMissing: true,
     }),
     secret: process.env.SESSION_SECRET || 'supersecretkey',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" 
-}
+    cookie: {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    },
   })
 );
-
-
-
-
-
-
 
 const employeeRoutes = require('./routes/employeeRoutes');
 const historicalRoutes = require('./routes/historicalRoutes');
 const userRoutes = require('./routes/userRoutes');
 const incrementalRoutes = require('./routes/incrementRoutes');
-const bonuses = require('./routes/bonusRoute')
+const bonuses = require('./routes/bonusRoute');
 const zohoRoutes = require('./routes/zohoRoutes');
 const webHooks = require('./routes/webHookRoutes');
 
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/employees', employeeRoutes);
-app.use('/api/historical_data',historicalRoutes);
-app.use('/api/increments',incrementalRoutes);
-app.use('/api/bonuses',bonuses);
-app.use('/api/zoho',zohoRoutes);
-app.use('/webhook',webHooks);
-
-
-
+app.use('/api/historical_data', historicalRoutes);
+app.use('/api/increments', incrementalRoutes);
+app.use('/api/bonuses', bonuses);
+app.use('/api/zoho', zohoRoutes);
+app.use('/webhook', webHooks);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   if (res.headersSent) {
-    // If response is already sent, delegate to Express's default error handler
     return next(err);
   }
 
@@ -95,24 +85,22 @@ app.use((err, req, res, next) => {
       status: err.status,
       message: err.message,
       error: err,
-      stack: err.stack
+      stack: err.stack,
     });
   } else {
     if (err.isOperational) {
       return res.status(err.statusCode).json({
         status: err.status,
-        message: err.message
+        message: err.message,
       });
     } else {
       console.error('ERROR 💥', err);
       return res.status(500).json({
         status: 'error',
-        message: 'Something went very wrong!'
+        message: 'Something went very wrong!',
       });
     }
   }
 });
-
-
 
 module.exports = app;
