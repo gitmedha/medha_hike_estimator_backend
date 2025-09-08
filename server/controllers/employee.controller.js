@@ -168,14 +168,33 @@ const downloadExcelFile = async (req,res)=>{
   }
 }
 
-const uploadExcelFile = async(req,res)=>{
+const uploadExcelFile = async (req) => {
   try {
-    await employeeService.uploadExcelFile(req);
-    res.status(200).json({message: 'Excel file uploaded successfully'});
-  } catch (error) {
-    res.status(500).json({error: 'Error uploading excel file', details: error.message});
+    // Get the validated data from the request body
+    console.log(req.body);
+    const { data: validRows } = req.body;
+
+    if (!validRows || !Array.isArray(validRows)) {
+      throw new Error("No valid data received");
+    }
+
+    if (validRows.length === 0) {
+      return { message: "No data to insert", recordsInserted: 0 };
+    }
+
+    // Insert all valid rows directly
+    await db("employee_details").insert(validRows);
+    console.log("Data inserted successfully");
+
+    return { 
+      message: "Data inserted successfully!",
+      recordsInserted: validRows.length
+    };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error while inserting data: " + err.message);
   }
-}
+};
 
 
 module.exports = {

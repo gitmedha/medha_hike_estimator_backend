@@ -13,5 +13,5 @@ router.post('/create_employee', employeeController.createEmployee);
 router.put('/edit_employee/:id', employeeController.updateEmployee);
 router.delete('/delete_employee/:id', employeeController.deleteEmployee);
 router.get('/download_excel', employeeController.downloadExcelFile);
-router.post('/upload_excel', upload.single('file'), employeeController.uploadExcelFile);
+router.post('/upload_excel', employeeController.uploadExcelFile);
 module.exports = router;
