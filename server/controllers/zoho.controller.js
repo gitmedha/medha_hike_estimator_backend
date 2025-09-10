@@ -77,6 +77,17 @@ const refreshZohoAccessToken = async () => {
   }
 };
 
+// ✅ Helper to parse "Experience" into a number (Zoho may return "2 month(s)")
+  const parseExperience = (exp) => {
+    if (!exp) return null;
+    if (typeof exp === "string") {
+      const num = parseFloat(exp);
+      return isNaN(num) ? null : num;
+    }
+    return parseFloat(exp);
+  };
+
+// Function to get employee details from Zoho
 /** ---------------------------
  * Zoho API Request Wrapper
  * --------------------------*/
@@ -119,24 +130,56 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
   const limit = 200;
 
   try {
-    while (true) {
-      const response = await zohoApiRequest(
-        'get',
-        `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`
+    let accessToken = process.env.ZOHO_ACCESS_TOKEN;
+
+    if (!accessToken) {
+      return res.status(400).json({ success: false, message: "Missing Zoho access token" });
+    }
+
+    const getZohoRecords = async (from, limit, headers) => {
+      return axios.get(
+        `https://people.zoho.com/people/api/forms/employee/getRecords?sIndex=${from + 1}&limit=${limit}`,
+        { headers }
       );
+    };
+
+    while (true) {
+      try {
+        const headers = { Authorization: `Zoho-oauthtoken ${accessToken}` };
+        let response;
+
+        try {
+          response = await getZohoRecords(from, limit, headers);
+        } catch (error) {
+          if (error.response?.status === 401) {
+            console.log("🔄 Access token expired, refreshing...");
+            accessToken = await refreshZohoAccessToken(); // update token
+            process.env.ZOHO_ACCESS_TOKEN = accessToken;
+            // 🔁 retry with new token
+            response = await getZohoRecords(from, limit, {
+              Authorization: `Zoho-oauthtoken ${accessToken}`,
+            });
+          } else {
+            throw error; // rethrow if not 401
+          }
+        }
 
       const records = response.data;
       if (!records) break;
 
-      if (!records.response?.status) {
-        const employees = Object.values(records.response.result || {})
-          .flatMap(employeeObj => Object.values(employeeObj || {}).flat());
+        if (!records.response?.status) {
+          const employees = Object.values(records.response.result || {})
+            .flatMap((employeeObj) => Object.values(employeeObj || {}).flat());
 
         if (!employees.length) break;
 
-        allRecords = allRecords.concat(employees);
-        from += limit;
-      } else {
+          allRecords = allRecords.concat(employees);
+          from += limit;
+        } else {
+          break;
+        }
+      } catch (error) {
+        console.error("❌ Error fetching employee data:", error.response?.data || error.message);
         break;
       }
     }
@@ -158,7 +201,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
         Dateofjoining,
         Employeestatus,
         Employee_type,
-        total_experience,
+        Experience, // ✅ current company experience
         Current_Band,
         GROSSMONTHLY_SALARY_FEE_Rs,
       } = employee;
@@ -174,13 +217,13 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
           date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
           employee_status: Employeestatus,
           employee_type: Employee_type,
-          experience: total_experience ? parseFloat(total_experience) : null,
+          experience: parseExperience(Experience), // ✅ current company exp
           current_band: Current_Band,
           gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
             ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
             : null,
         })
-        .onConflict('employee_id')
+        .onConflict("employee_id")
         .merge({
           first_name: FirstName,
           last_name: LastName,
@@ -190,11 +233,11 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
           date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
           employee_status: Employeestatus,
           employee_type: Employee_type,
-          experience: total_experience ? parseFloat(total_experience) : null,
+          experience: parseExperience(Experience),
           current_band: Current_Band,
           gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
             ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
-            : null
+            : null,
         });
 
       const tenure = yearsBetween(Dateofjoining);
@@ -203,20 +246,22 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
       const incrementPayload = {
         employee_id: EmployeeID,
         appraisal_cycle: appraisalCycle,
-        full_name: `${FirstName || ''} ${LastName || ''}`.trim(),
+        full_name: `${FirstName || ""} ${LastName || ""}`.trim(),
         current_band: Current_Band || null,
-        current_salary: GROSSMONTHLY_SALARY_FEE_Rs ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs) : null,
+        current_salary: GROSSMONTHLY_SALARY_FEE_Rs
+          ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
+          : null,
         tenure: tenure,
         long_tenure: longTenure,
       };
 
-      const existing = await db('increment_details')
-        .select('id')
+      const existing = await db("increment_details")
+        .select("id")
         .where({ employee_id: EmployeeID, appraisal_cycle: appraisalCycle })
         .first();
 
       if (existing) {
-        await db('increment_details')
+        await db("increment_details")
           .update({
             full_name: incrementPayload.full_name,
             current_band: incrementPayload.current_band,
@@ -228,7 +273,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
 
         updatedIncrements += 1;
       } else {
-        await db('increment_details').insert(incrementPayload);
+        await db("increment_details").insert(incrementPayload);
         insertedIncrements += 1;
       }
     }
@@ -240,15 +285,17 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
       appraisalCycle,
       incrementDetails: {
         inserted: insertedIncrements,
-        updated: updatedIncrements
-      }
+        updated: updatedIncrements,
+      },
     });
-
   } catch (error) {
     console.error("❌ Error:", error.response?.data || error.message);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+// Helper to calculate the current appraisal cycle
 
 /** ---------------------------
  * Helpers
