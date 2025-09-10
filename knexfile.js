@@ -8,24 +8,26 @@ module.exports = {
       host: '127.0.0.1',
       user: 'postgres',
       password: 'Deepak@2721',
-      database: 'hike'
+      database: 'hike',
     },
     migrations: {
-      directory: './knex/migrations'
+      directory: './knex/migrations',
     },
     seeds: {
-      directory: './knex/seeds'
-    }
+      directory: './knex/seeds',
+    },
   },
   production: {
     client: 'pg',
-    connection: process.env.DATABASE_URL,
+    connection: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    },
     migrations: {
-      directory: './knex/migrations'
+      directory: './knex/migrations',
     },
     seeds: {
-      directory: './knex/seeds'
-    }
-  }
+      directory: './knex/seeds',
+    },
+  },
 };
-
