@@ -227,14 +227,18 @@ const downloadExcelFile = async (req,res)=>{
   }
 }
 
-const uploadExcelFile = async(req,res)=>{
+const uploadExcelFile = async (req, res) => {
   try {
-    await incrementService.uploadExcelFile(req);
-    res.status(200).json({message: 'Excel file uploaded successfully'});
+    const result = await incrementService.uploadExcelFile(req);
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({error: 'Error uploading excel file', details: error.message});
+    res.status(500).json({
+      success: false,
+      error: 'Error uploading excel file',
+      details: error.message
+    });
   }
-}
+};
 const getBulkWeightedIncrement = async(req,res)=>{
   const {reviewCycle} = req.query;
   try {

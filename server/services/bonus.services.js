@@ -128,20 +128,29 @@ const getPickLists = async (reviewCycle)=>{
  }
 
 
- const uploadBonusData = async (req) => {
+ const uploadExcelFile = async (req) => {
   try {
+    // Get the validated data from the request body (from UploadExcel component)
+    const { data: validRows } = req.body;
 
-    const data = req.excelData;
-    if (!data || data.length === 0) {
-      throw new Error("No data found in Excel");
+    if (!validRows || !Array.isArray(validRows)) {
+      throw new Error("No valid data received");
     }
 
-    const reviewCycle = data[0]['Appraisal Cycle'];
+    if (validRows.length === 0) {
+      return { 
+        success: true,
+        message: "No data to insert", 
+        recordsInserted: 0 
+      };
+    }
+
+    const reviewCycle = validRows[0]['review_cycle'];
     if (!reviewCycle) {
-      throw new Error("Missing Appraisal Cycle in Excel data");
+      throw new Error("Missing review cycle in data");
     }
 
-    // ✅ Check if data already exists for this review cycle
+    // ✅ Check if data already exists for this review cycle (maintaining your existing check)
     const existing = await db('bonus_details')
       .where('review_cycle', reviewCycle)
       .first();
@@ -149,65 +158,45 @@ const getPickLists = async (reviewCycle)=>{
     if (existing) {
       throw new Error(`Data for review cycle "${reviewCycle}" already exists.`);
     }
+
+    // Transform data to match your expected format
+    const bonusData = validRows.map(row => ({
+      employee_id: row.employee_id,
+      full_name: row.full_name,
+      manager: row.manager,
+      kra: parseFloat(row.kra) || 0,
+      compentency: parseFloat(row.compentency) || 0,
+      average: parseFloat(row.average) || 0,
+      normalized_ratings: parseFloat(row.normalized_ratings) || 0,
+      bonus: parseFloat(row.bonus) || 0,
+      weighted_bonus: parseFloat(row.weighted_bonus) || 0,
+      review_cycle: row.review_cycle
+    }));
+
+    // Insert all valid rows directly into bonus_details table
+    await db("bonus_details").insert(bonusData);
+    console.log("Bonus data inserted successfully");
+
+    return {
+      success: true,
+      message: "Bonus data inserted successfully!",
+      recordsInserted: bonusData.length
+    };
+  } catch (err) {
+    console.error("Database insertion error:", err);
     
-  
-    for (const row of data) {
-      const dataObj = {
-        id: row.Employee.split(' ')[0],
-        name: `${row.Employee.split(' ')[1]} ${row.Employee.split(' ')[2]}`,
-        manager: `${row.Reviewer.split(' ')[1]} ${row.Reviewer.split(' ')[2]}`,
-        average: parseFloat(row['Final Score']),
-        kra: parseFloat(row['KRA vs GOALS']),
-        competency: parseFloat(row.Competency),
-        review_cycle: row['Appraisal Cycle']
-      };
-      
-      await insertBulkData(dataObj);
+    // Check for specific database errors
+    let errorMessage = "Error while inserting bonus data";
+    
+    if (err.code === '23505') { // PostgreSQL unique violation
+      errorMessage = "Duplicate bonus entry found. Please check your data.";
+    } else if (err.code === '23502') { // PostgreSQL not null violation
+      errorMessage = "Required fields are missing. Please check your data.";
+    } else {
+      errorMessage = err.message || "Unknown database error occurred";
     }
 
-    // for (let i = 0; i < data.length; i++){
-
-    //   let row = data[i];
-
-    //   const dataObj = {
-    //     id: row.__EMPTY,
-    //     name: row.__EMPTY_1,
-    //     kra: parseFloat(row['Apr - Sept 2023']) || 0,
-    //     competency: parseFloat(row.__EMPTY_2) || 0,
-    //     average: parseFloat(row.__EMPTY_3) || 0,
-    //     manager: row.__EMPTY_4 || '',
-    //     review_cycle:'April 2023-Sep 2023'
-    //   };
-  
-     
-    // await insertBulkData(dataObj);
-
-    // if(dataObj.id === 'M0410'){
-    //   console.log("dataObj.id",dataObj);
-    //   break;
-    // }
-    
-  //   const dataObj = {};
-  
-  
-  //   let employeeInfo = row.Employee.split(" ");
-  //   let managerInfo = row.Reviewer.split(" ");
-
-  //   dataObj.id = `${employeeInfo[0]}`;
-  //   dataObj.name = `${employeeInfo[1]} ${employeeInfo[2]}`;
-  //   dataObj.manager = `${managerInfo[1]} ${managerInfo[2]}`;
-  //   dataObj.average = parseFloat(row['Final Score']);
-  //   dataObj.kra = parseFloat(row['KRA vs GOALS']);
-  //   dataObj.competency = parseFloat(row.Competency);
-  //   dataObj.review_cycle = row['Appraisal Cycle'];
-  // await insertBulkData(dataObj);
-    // }
-    return { message: "Data uploaded and inserted successfully!" };
-
-  } catch (error) {
-    console.log("error",error)
-    console.error('Error in uploadBonusData:', error.message);
-    throw error;
+    throw new Error(errorMessage);
   }
 };
 
@@ -493,7 +482,7 @@ module.exports = {
     getPickLists,
     updateBonusService,
     deleteBonusService,
-    uploadBonusData,
+    uploadExcelFile,
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,

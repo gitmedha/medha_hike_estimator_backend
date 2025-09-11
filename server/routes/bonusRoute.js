@@ -67,7 +67,7 @@ router.post('/calculate_bonus',calculateBonus);
 
 // Upload bonus excel data
 
-router.post('/upload_bonus_data',validateExcel,uploadBonusFile);
+router.post('/upload_bonus_data',uploadBonusFile);
 
 // Bulk Rating
 
