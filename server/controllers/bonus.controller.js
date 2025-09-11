@@ -7,7 +7,7 @@ const {
     getPickLists,
     updateBonusService,
     deleteBonusService,
-    uploadBonusData,
+    uploadExcelFile,
     calculateBonusRating,
     calculateBonusPercentage,
     BulkBonusRating,
@@ -135,17 +135,18 @@ const calculateBonus = async(req,res)=>{
     }
 };
 
-const uploadBonusFile = async(req,res)=>{
-    try {
-    
-        const result = await uploadBonusData(req);
-        return res.status(200).json(result);
-        
-    } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-}
-
+const uploadBonusFile = async (req, res) => {
+  try {
+    const result = await uploadExcelFile(req);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error uploading excel file',
+      details: error.message
+    });
+  }
+};
 const bulkRating = async(req,res)=>{
     try {
         const {reviewCycle} = req.query;

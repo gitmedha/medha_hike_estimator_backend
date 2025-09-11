@@ -49,7 +49,7 @@ router.get('/calculate_bulk_increment',incrementController.getBulkIncrement);
 
 router.get('/download_excel', incrementController.downloadExcelFile);
 
-router.post('/upload_excel', validateExcel, incrementController.uploadExcelFile);
+router.post('/upload_excel',incrementController.uploadExcelFile);
 
 router.get('/calculate_bulk_weighted_increment', incrementController.getBulkWeightedIncrement);
 

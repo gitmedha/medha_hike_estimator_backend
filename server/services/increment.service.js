@@ -335,15 +335,24 @@ const getBulkIncrement = async (reviewCycle)=>{
 
 const uploadExcelFile = async (req) => {
   try {
+    // Get the validated data from the request body (from UploadExcel component)
+    const { data: validRows } = req.body;
 
-    const data = req.excelData;
-    if (!data || data.length === 0) {
-      throw new Error("No data found in Excel");
+    if (!validRows || !Array.isArray(validRows)) {
+      throw new Error("No valid data received");
     }
 
-    const reviewCycle = data[0]['Appraisal Cycle'];
+    if (validRows.length === 0) {
+      return { 
+        success: true,
+        message: "No data to insert", 
+        recordsInserted: 0 
+      };
+    }
+
+    const reviewCycle = validRows[0]['review_cycle'];
     if (!reviewCycle) {
-      throw new Error("Missing Appraisal Cycle in Excel data");
+      throw new Error("Missing review cycle in data");
     }
 
     // ✅ Check if data already exists for this review cycle
@@ -354,52 +363,52 @@ const uploadExcelFile = async (req) => {
     if (existing) {
       throw new Error(`Data for review cycle "${reviewCycle}" already exists.`);
     }
-    
-  
-    for (const row of data) {
-      const dataObj = {
-        employee_id: row.Employee.split(' ')[0],
-        full_name: `${row.Employee.split(' ')[1]} ${row.Employee.split(' ')[2]}`,
-        manager: `${row.Reviewer.split(' ')[1]} ${row.Reviewer.split(' ')[2]}`,
-        average: parseFloat(row['Final Score']),
-        kra_vs_goals: parseFloat(row['KRA vs GOALS']),
-        compentency: parseFloat(row.Competency),
-        appraisal_cycle: row['Appraisal Cycle']
-      };
-      
-      await db('increment_details').insert(dataObj);
-    }
-    // const filePath = req.file.path;
-    // const workbook = xlsx.readFile(filePath);
-    // const sheetName = workbook.SheetNames[0];
-    // const worksheet = workbook.Sheets[sheetName];
-    // const data = xlsx.utils.sheet_to_json(worksheet);
 
-    // for (let i = 0; i < data.length; i++) {
-    // let row = data[i];
+    // Transform data to match your database schema
+    const incrementData = validRows.map(row => ({
+      employee_id: row.employee_id,
+      full_name: row.full_name,
+      manager: row.manager,
+      kra_vs_goals: parseFloat(row.kra) || 0,
+      compentency: parseFloat(row.compentency) || 0,
+      average: parseFloat(row.average) || 0,
+      normalize_rating: parseFloat(row.normalized_ratings) || 0,
+      increment: parseFloat(row.increment) || 0,
+      weighted_increment: parseFloat(row.weighted_increment) || 0,
+      long_tenure: row.long_tenure === 'true' || row.long_tenure === true || row.long_tenure === '1',
+      current_band: row.current_band,
+      current_salary: parseFloat(row.current_salary) || 0,
+      new_band: row.new_band,
+      new_salary: parseFloat(row.new_salary) || 0,
+      appraisal_cycle: row.review_cycle // Note: mapping review_cycle to appraisal_cycle
+    }));
 
-    // const dataObj = {
-    //   employee_id: row.__EMPTY,
-    //   full_name: row.__EMPTY_1,
-    //   kra_vs_goals: parseFloat(row['Apr - Mar 2024']) || 0,
-    //   compentency: parseFloat(row.__EMPTY_8) || 0,
-    //   average: parseFloat(row.__EMPTY_9) || 0,
-    //   manager: row.__EMPTY_10 || '',
-    //   appraisal_cycle:'April 2023-Mar 2024'
-    // };
+    // Insert all valid rows directly into increment_details table
+    await db("increment_details").insert(incrementData);
+    console.log("Increment data inserted successfully");
 
-    // await db('increment_details').insert(dataObj);
-    
-    // if(dataObj.employee_id === 'M0418'){
-    //   console.log("dataObj",dataObj)
-    //   console.log("Breaking")
-    //   break;
-    // }
-    // }
-    return { message: "Data uploaded and inserted successfully!" };
+    return {
+      success: true,
+      message: "Increment data inserted successfully!",
+      recordsInserted: incrementData.length
+    };
   } catch (err) {
-    console.error(err);
-    throw new Error("Error while uploading Excel file: " + err.message);
+    console.error("Database insertion error:", err);
+    
+    // Check for specific database errors
+    let errorMessage = "Error while inserting increment data";
+    
+    if (err.code === '23505') { // PostgreSQL unique violation
+      errorMessage = "Duplicate increment entry found. Please check your data.";
+    } else if (err.code === '23502') { // PostgreSQL not null violation
+      errorMessage = "Required fields are missing. Please check your data.";
+    } else if (err.code === '22007') { // PostgreSQL invalid datetime format
+      errorMessage = "Invalid date format. Please use YYYY-MM-DD format.";
+    } else {
+      errorMessage = err.message || "Unknown database error occurred";
+    }
+
+    throw new Error(errorMessage);
   }
 };
 

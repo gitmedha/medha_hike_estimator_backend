@@ -121,92 +121,60 @@ const deleteHistoricService = async (id) => {
 
 const uploadExcelFile = async (req) => {
   try {
+    // Get the validated data from the request body (from UploadExcel component)
+    const { data: validRows } = req.body;
 
-    const filePath = req.file.path;
-    const workbook = xlsx.readFile(filePath);
-    // for all the historical data
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
-
-    //for bonus as historical data
-
-    for (let i = 1; i < data.length; i++) {
-      let row = data[i];
-
-    //   const dataObj = {
-    //     employee: row.__EMPTY_1,
-    //     kra_vs_goals: parseFloat(row['Apr - Sept 2023']) || 0,
-    //     competency: parseFloat(row.__EMPTY_2) || 0,
-    //     final_score: parseFloat(row.__EMPTY_3) || 0,
-    //     reviewer: row.__EMPTY_4 || '',
-    //     start_month:'April 2023',
-    //     ending_month: 'Sep 2023',
-    //   };
-
-    //   await db("historical_data").insert(dataObj);
-    //   if(row.__EMPTY=== 'M0410'){
-    //     console.log("dataObj.id",row.__EMPTY);
-    //     console.log("dataObj",dataObj)
-    //     break;
-    //   }
-    // }
-
-   
-    // let reviewCycle = ''
-
-    // for (let i = 0; i < data.length; i++) {
-    //   const row = data[i];
-    //   let dataObj={};
-
-    //   if (row.__EMPTY && row.__EMPTY.includes('-')) {
-    //     reviewCycle = row.__EMPTY.trim();
-    //     continue
-    //   }
-    //   if(row.__EMPTY ==='Employee'){
-    //     continue;
-    //   }
-
-    // let duration = reviewCycle.split("-");
-    // let start_month = duration[0];
-    // let end_month = duration[1];
-    // dataObj.employee_id = `${employeeInfo[0]}`;
-    // dataObj.employee = row.__EMPTY;
-    // dataObj.reviewer = row.__EMPTY_1;
-    // dataObj.final_score = row.__EMPTY_4;
-    // dataObj.kra_vs_goals = row.__EMPTY_2;
-    // dataObj.competency = row.__EMPTY_3;
-    // dataObj.start_month = start_month;
-    // dataObj.ending_month = end_month;
-
-    // await db("historical_data").insert(dataObj);
-
-
-
-
-// for zoho downloaded excel data 
-      let employeeInfo = row.Employee.split(" ");
-      let managerInfo = row.Reviewer.split(" ");
-      let duration = row['Appraisal Cycle'].split("-");
-      let start_month = duration[0];
-      let end_month = duration[1];
-      dataObj.employee_id = `${employeeInfo[0]}`;
-      dataObj.employee = `${employeeInfo[1]} ${employeeInfo[2]}`;
-      dataObj.reviewer = `${managerInfo[1]} ${managerInfo[2]}`;
-      dataObj.final_score = parseFloat(row['Final Score']);
-      dataObj.kra_vs_goals = parseFloat(row['KRA vs GOALS']);
-      dataObj.competency = parseFloat(row.Competency);
-      dataObj.start_month = start_month;
-      dataObj.ending_month = end_month;
-
-      await db("historical_data").insert(dataObj);
-
+    if (!validRows || !Array.isArray(validRows)) {
+      throw new Error("No valid data received");
     }
 
-    return { message: "Data uploaded and inserted successfully!" };
+    if (validRows.length === 0) {
+      return { 
+        success: true,
+        message: "No data to insert", 
+        recordsInserted: 0 
+      };
+    }
+
+    // Transform data to match your historical_data schema
+    const historicalData = validRows.map(row => {      
+      return {
+        employee_id: row.employee_id,
+        employee: row.full_name, // Using full_name from upload as employee name
+        reviewer: row.manager,   // Using manager from upload as reviewer
+        final_score: parseFloat(row.average) || 0,
+        kra_vs_goals: parseFloat(row.kra) || 0,
+        competency: parseFloat(row.compentency) || 0,
+        start_month: row.start_month,
+        ending_month: row.ending_month,
+      };
+    });
+
+
+    // Insert all valid rows directly into historical_data table
+    await db("historical_data").insert(historicalData);
+    console.log("Historical data inserted successfully");
+
+    return {
+      success: true,
+      message: "Historical data inserted successfully!",
+      recordsInserted: historicalData.length,
+    };
   } catch (err) {
-    console.error(err);
-    throw new Error("Error while uploading Excel file: " + err.message);
+    console.error("Database insertion error:", err);
+    
+    // Check for specific database errors
+    let errorMessage = "Error while inserting historical data";
+    
+    if (err.code === '23505') { // PostgreSQL unique violation
+      errorMessage = "Duplicate historical entry found. Please check your data.";
+    } else if (err.code === '23502') { // PostgreSQL not null violation
+      errorMessage = "Required fields are missing. Please check your data.";
+    } else {
+      errorMessage = err.message || "Unknown database error occurred";
+    }
+
+    throw new Error(errorMessage);
   }
 };
 

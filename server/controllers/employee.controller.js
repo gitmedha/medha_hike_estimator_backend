@@ -171,7 +171,6 @@ const downloadExcelFile = async (req,res)=>{
 
 const uploadExcelFile = async (req, res) => {
   try {
-    // Get the validated data from the request body
     const { data: validRows } = req.body;
 
     if (!validRows || !Array.isArray(validRows)) {
@@ -189,26 +188,59 @@ const uploadExcelFile = async (req, res) => {
       });
     }
 
-    // Insert all valid rows directly
-    await db("employee_details").insert(validRows);
+    // ✅ Helper: normalize date into YYYY-MM-DD
+    const normalizeDate = (val) => {
+      if (!val) return null;
+
+      // If value looks like Excel numeric date serial
+      if (!isNaN(val) && String(val).length <= 5) {
+        const baseDate = new Date(1899, 11, 30); // Excel epoch
+        const normalized = new Date(baseDate.getTime() + (val * 86400000));
+        return normalized.toISOString().slice(0, 10);
+      }
+
+      // Handle formats like "7/14/25" or "07/14/2025"
+      if (typeof val === "string" && val.includes("/")) {
+        const parts = val.split("/");
+        if (parts.length === 3) {
+          let [month, day, year] = parts.map(p => p.trim());
+          if (year.length === 2) year = `20${year}`; // expand "25" → "2025"
+          return `${year.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+      }
+
+      // If already ISO string or Date
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().slice(0, 10);
+      }
+
+      throw new Error(`Invalid date format: ${val}`);
+    };
+
+    // ✅ Normalize each row before insert
+    const transformedRows = validRows.map(row => ({
+      ...row,
+      date_of_joining: normalizeDate(row.date_of_joining)
+    }));
+
+    await db("employee_details").insert(transformedRows);
     console.log("Data inserted successfully");
 
     return res.status(200).json({
       success: true,
       message: "Data inserted successfully!",
-      recordsInserted: validRows.length
+      recordsInserted: transformedRows.length
     });
   } catch (err) {
     console.error("Database insertion error:", err);
-    
-    // Check for specific database errors
+
     let errorMessage = "Error while inserting data";
-    
-    if (err.code === '23505') { // PostgreSQL unique violation
+    if (err.code === '23505') {
       errorMessage = "Duplicate employee ID found. Please check your data.";
-    } else if (err.code === '23502') { // PostgreSQL not null violation
+    } else if (err.code === '23502') {
       errorMessage = "Required fields are missing. Please check your data.";
-    } else if (err.code === '22007') { // PostgreSQL invalid datetime format
+    } else if (err.code === '22007') {
       errorMessage = "Invalid date format. Please use YYYY-MM-DD format.";
     } else {
       errorMessage = err.message || "Unknown database error occurred";
@@ -220,6 +252,7 @@ const uploadExcelFile = async (req, res) => {
     });
   }
 };
+
 
 
 module.exports = {
