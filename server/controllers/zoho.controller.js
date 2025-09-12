@@ -201,7 +201,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
         Dateofjoining,
         Employeestatus,
         Employee_type,
-        Experience, // ✅ current company experience
+        Experience,
         Current_Band,
         GROSSMONTHLY_SALARY_FEE_Rs,
       } = employee;
@@ -272,9 +272,6 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
           .where({ id: existing.id });
 
         updatedIncrements += 1;
-      } else {
-        await db("increment_details").insert(incrementPayload);
-        insertedIncrements += 1;
       }
     }
 
