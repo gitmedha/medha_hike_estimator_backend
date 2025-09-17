@@ -217,7 +217,7 @@ const getEmployeeDetailsFromZoho = async (req, res) => {
           date_of_joining: Dateofjoining ? new Date(Dateofjoining) : null,
           employee_status: Employeestatus,
           employee_type: Employee_type,
-          experience: parseExperience(Experience), // ✅ current company exp
+          experience: parseExperience(Experience),
           current_band: Current_Band,
           gross_monthly_salary_or_fee_rs: GROSSMONTHLY_SALARY_FEE_Rs
             ? parseFloat(GROSSMONTHLY_SALARY_FEE_Rs)
