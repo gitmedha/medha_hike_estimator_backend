@@ -1,5 +1,7 @@
 const userServices = require('../services/user.services');
 const userModel = require('../models/user.model');
+const jwt = require('jsonwebtoken');
+
 
 /**
  * @param {object} req
@@ -7,34 +9,44 @@ const userModel = require('../models/user.model');
  */
 const LoginUser = async (req, res) => {
   try {
-    const username = req.body.username || "";
-    const password = req.body.password || "";
+    const userName = req.body.username || "";
+    const userPassword = req.body.password || "";
 
-    const result = await userServices.LoginUser(username);
+    const {data} = await userServices.LoginUser(userName);
 
-    if (!result.data.length) {
+    if (!data || data.length === 0) {
       return res.status(401).json({ error: "Invalid username" });
     }
+    const [user] = data;
+
+    const { username, isadmin, id, password } = user;
 
     const isPasswordValid = await userServices.comparePassword(
-      result.data[0].password,
-      password
+      password,
+      userPassword
     );
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    // ✅ Store user in session
-    req.session.user = {
-      id: result.data[0].id,
-      username: result.data[0].username,
-      isAdmin: result.data[0].isadmin || false,
-    };
+      const token = jwt.sign(
+      { 
+        userId:id,
+        username: username,
+        isAdmin: isadmin
+      },
+      process.env.JWT_SECRET || 'hikeAppLocalSecretKey',
+      { expiresIn: '1h' }
+    );
 
-    res.status(200).json({
+    const { password: _, ...safeUser } = user;
+
+    return res.status(200).json({
       message: "Login successful",
-      user: req.session.user,
+      token,
+      user: safeUser,
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({
