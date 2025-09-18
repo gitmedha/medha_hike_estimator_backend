@@ -9,7 +9,6 @@ const jwt = require('jsonwebtoken');
  */
 const LoginUser = async (username) => {
   const result = await userModel.LoginUser(username);
-
   return {
     data: result.data
   };

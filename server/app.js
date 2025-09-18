@@ -3,17 +3,11 @@ const app = express();
 const cors = require('cors');
 const session = require('express-session');
 const dbConfig = require('../knexfile')[process.env.NODE_ENV || 'development'];
+const jwt = require('jsonwebtoken');
 
-if (!String.prototype.replaceAll) {
-  String.prototype.replaceAll = function (search, replacement) {
-    return this.split(search).join(replacement);
-  };
-}
-
-const PgSession = require('connect-pg-simple')(session);
 
 // database connection initialization
-const knex = require('./config/db');
+require('./config/db');
 
 // cors configuration
 const corsOptions = {
@@ -29,30 +23,10 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.set('trust proxy', 1);
 
-// ✅ Always pass object to connect-pg-simple
-const connection =
-  typeof dbConfig.connection === 'string'
-    ? { connectionString: dbConfig.connection }
-    : dbConfig.connection;
 
-app.use(
-  session({
-    store: new PgSession({
-      conObject: connection,
-      tableName: 'user_sessions',
-      createTableIfMissing: true,
-    }),
-    secret: process.env.SESSION_SECRET || 'supersecretkey',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 60 * 60 * 1000,
-      httpOnly: true,      
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    },
-  })
-);
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+
 
 
 const employeeRoutes = require('./routes/employeeRoutes');
