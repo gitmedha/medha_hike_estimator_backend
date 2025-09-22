@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const historicalController = require('../controllers/historical.controller');
-const upload = require('../middlewares/multer');
 
 
 router.get('/get_historical_data', historicalController.getHistoricalData);
@@ -14,6 +13,6 @@ router.post('/create_historical_data', historicalController.createHistoric);
 router.put('/edit_historical_data/:id', historicalController.updateHistoric);
 router.delete('/delete_historical_data/:id', historicalController.deleteHistoric);
 router.get('/download_excel', historicalController.downloadExcelFile);
-router.post('/upload_excel', upload.single('file'), historicalController.uploadExcelFile);
+router.post('/upload_excel',historicalController.uploadExcelFile);
 
 module.exports = router;
