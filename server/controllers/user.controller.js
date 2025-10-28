@@ -64,7 +64,7 @@ const LoginUser = async (req, res) => {
 
 const createUser = async(req, res) => {
   try {
-    const { name,username, password, adminUser, adminPwd, isAdmin} = req.body;  
+    const { name,username, password, adminUser, adminPwd, isadmin} = req.body;  
 //validate the admin credentials
     if(adminUser && adminPwd){
       // Fetch stored admin credentials from database
@@ -81,7 +81,7 @@ const createUser = async(req, res) => {
 //validate the user credentials
 
     if (!username ||!password || !name) return res.status(400).json({ error: 'Username and password are required' });
-    const result =await userServices.RegisterUser(username, password,name,isAdmin);
+    const result =await userServices.RegisterUser(username, password,name,isadmin);
     const token = await userServices.generateToken(result.data[0]);
 
     res.status(201).json({ data: result.data , token:token});
