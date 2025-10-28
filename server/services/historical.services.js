@@ -150,9 +150,10 @@ const uploadExcelFile = async (req) => {
       };
     });
 
+    console.log("historicalData",historicalData)
 
     // Insert all valid rows directly into historical_data table
-    await db("historical_data").insert(historicalData);
+    // await db("historical_data").insert(historicalData);
     console.log("Historical data inserted successfully");
 
     return {
